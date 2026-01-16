@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "261325795906",
+    "project_id": "coursemates-app",
+    "storage_bucket": "coursemates-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:261325795906:android:244fa0cb2f327e6362b3db",
+        "android_client_info": {
+          "package_name": "com.example.coursemates_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVV-j8FRxaQy5D7SrMJxP_lLHkV7hMgaI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
