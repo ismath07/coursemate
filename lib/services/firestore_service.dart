@@ -92,7 +92,7 @@ class FirestoreService {
   }
 
   // Returns syllabus data for a subject as a clean map:
-  // { subjectTitle: String, units: Map<String, String> }
+  // { subjectTitle: String, units: Map<String, dynamic> }
   Future<Map<String, dynamic>?> getSyllabus(
     String degreeLevelId,
     String courseId,
@@ -114,54 +114,12 @@ class FirestoreService {
     final data = doc.data();
     if (data == null) return null;
 
-    final title = (data['displayName'] ?? '').toString();
-    final rawUnits = data['units'];
-
-    final units = <String, String>{};
-    if (rawUnits is Map) {
-      rawUnits.forEach((key, value) {
-        if (key != null && value != null) {
-          units[key.toString()] = value.toString();
-        }
-      });
-    }
+    final title = (data['subjectTitle'] ?? '').toString();
+    final rawUnits = data['units'] ?? {};
 
     return {
       'subjectTitle': title,
-      'units': units,
-    };
-  }
-
-  // Finds a subject document across all 'subjects' subcollections by subjectCode
-  // and returns { subjectTitle, units } similar to getSyllabus above.
-  Future<Map<String, dynamic>?> getSyllabusBySubjectCode(
-    String subjectCode,
-  ) async {
-    final query = await _firestore
-        .collectionGroup('subjects')
-        .where('subjectCode', isEqualTo: subjectCode)
-        .limit(1)
-        .get();
-
-    if (query.docs.isEmpty) return null;
-    final doc = query.docs.first;
-    final data = doc.data();
-
-    final title = (data['displayName'] ?? '').toString();
-    final rawUnits = data['units'];
-
-    final units = <String, String>{};
-    if (rawUnits is Map) {
-      rawUnits.forEach((key, value) {
-        if (key != null && value != null) {
-          units[key.toString()] = value.toString();
-        }
-      });
-    }
-
-    return {
-      'subjectTitle': title,
-      'units': units,
+      'units': rawUnits is Map ? Map<String, dynamic>.from(rawUnits) : <String, dynamic>{},
     };
   }
 }

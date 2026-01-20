@@ -88,13 +88,18 @@ class StaffSelectSubjectScreen extends StatelessWidget {
                     final subjectName = subjects[index]['displayName'] ?? '';
                     final subjectCode = subjects[index]['subjectCode'] ?? '';
                     return InkWell(
-                      onTap: () {
+                      onTap: () async {
+                        final data = await _firestoreService.getSyllabus(degreeLevelId, courseId, semesterId, subjectCode);
+                        final titleFromFirestore = data?['subjectTitle']?.toString() ?? subjectName;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => StaffViewSyllabusScreen(
-                              subjectTitle: subjectName,
+                              subjectTitle: titleFromFirestore,
                               subjectCode: subjectCode,
+                              degreeLevelId: degreeLevelId,
+                              courseId: courseId,
+                              semesterId: semesterId,
                             ),
                           ),
                         );

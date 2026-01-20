@@ -5,11 +5,17 @@ import '../../services/firestore_service.dart';
 class StaffViewSyllabusScreen extends StatelessWidget {
   final String subjectTitle;
   final String subjectCode;
+  final String degreeLevelId;
+  final String courseId;
+  final String semesterId;
 
   const StaffViewSyllabusScreen({
     super.key,
     required this.subjectTitle,
     required this.subjectCode,
+    required this.degreeLevelId,
+    required this.courseId,
+    required this.semesterId,
   });
 
   @override
@@ -41,7 +47,7 @@ class StaffViewSyllabusScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: FutureBuilder<Map<String, dynamic>?>(
-          future: _firestoreService.getSyllabusBySubjectCode(subjectCode),
+          future: _firestoreService.getSyllabus(degreeLevelId, courseId, semesterId, subjectCode),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -53,7 +59,7 @@ class StaffViewSyllabusScreen extends StatelessWidget {
             if (data == null) {
               return const Center(child: Text('No data available'));
             }
-            final units = (data['units'] as Map<String, String>? ?? {});
+            final units = Map<String, dynamic>.from(data['units'] ?? {});
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +89,7 @@ class StaffViewSyllabusScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        entry.value,
+                        entry.value.toString(),
                         style: const TextStyle(fontSize: 13),
                       ),
                       const SizedBox(height: 14),
