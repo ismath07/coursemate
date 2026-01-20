@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'staff_home_screen.dart';
 import 'select_subject_screen.dart';
+import '../../services/firestore_service.dart';
 
 class SelectSemesterScreen extends StatelessWidget {
   final String courseTitle;
@@ -9,6 +10,12 @@ class SelectSemesterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FirestoreService _firestoreService = FirestoreService();
+    final String degreeLevelId = () {
+      if (degreeLevel == 'Undergraduate') return 'UG';
+      if (degreeLevel == 'Postgraduate') return 'PG';
+      return 'DIP';
+    }();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -47,46 +54,78 @@ class SelectSemesterScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: ListView.separated(
-                // number of semesters depends on degree level
-                itemCount: (() {
-                  if (degreeLevel == 'Undergraduate') return 6;
-                  if (degreeLevel == 'Postgraduate') return 4; // postgraduate has 4 semesters
-                  return 4; // default/diploma/staff fallback
-                })(),
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final title = 'Semester ${index + 1}';
-                  return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StaffSelectSubjectScreen(
-                            courseTitle: courseTitle,
-                            semester: index + 1,
-                            degreeLevel: degreeLevel,
-                          ),
-                        ),
+              child: StreamBuilder<List<Map<String, String>>>(
+                stream: _firestoreService.getCourses(degreeLevelId),
+                builder: (context, courseSnapshot) {
+                  if (courseSnapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (courseSnapshot.hasError) {
+                    return const Center(child: Text('Failed to load data.'));
+                  }
+                  final courses = courseSnapshot.data ?? [];
+                  final course = courses.firstWhere(
+                    (c) => (c['displayName'] ?? '') == courseTitle,
+                    orElse: () => {},
+                  );
+                  final courseId = course['id'];
+                  if (courseId == null || courseId.isEmpty) {
+                    return const Center(child: Text('No data available'));
+                  }
+                  return StreamBuilder<List<Map<String, String>>>(
+                    stream: _firestoreService.getSemesters(degreeLevelId, courseId),
+                    builder: (context, semSnapshot) {
+                      if (semSnapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (semSnapshot.hasError) {
+                        return const Center(child: Text('Failed to load semesters.'));
+                      }
+                      final semesters = semSnapshot.data ?? [];
+                      if (semesters.isEmpty) {
+                        return const Center(child: Text('No data available'));
+                      }
+                      return ListView.separated(
+                        itemCount: semesters.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final title = semesters[index]['displayName'] ?? '';
+                          return InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => StaffSelectSubjectScreen(
+                                    courseTitle: courseTitle,
+                                    semester: index + 1,
+                                    degreeLevel: degreeLevel,
+                                  ),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.school_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
+                                  const SizedBox(width: 16),
+                                  Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+                                  Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,4))],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.school_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 16),
-                          Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
-                          Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
-                        ],
-                      ),
-                    ),
                   );
                 },
               ),

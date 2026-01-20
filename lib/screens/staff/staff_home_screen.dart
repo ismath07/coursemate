@@ -3,6 +3,7 @@ import 'timetable_home_screen.dart';
 import 'select_course_screen.dart';
 import 'select_course_postgrad_screen.dart';
 import 'select_course_diploma_screen.dart';
+import '../../services/firestore_service.dart';
 import 'staff_profile_screen.dart';
 import 'admin_panel.dart';
 
@@ -24,60 +25,72 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   }
 
   List<Widget> get _pages => [
-        // Syllabus-like content (use AppBar gradient; body shows a simple title)
-        Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Welcome, Staff',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
+        StreamBuilder<List<Map<String, String>>>(
+          stream: FirestoreService().getDegreeLevels(),
+          builder: (context, snapshot) {
+            final levels = snapshot.data ?? const [];
+            String ugName = 'Undergraduate';
+            String pgName = 'Postgraduate';
+            String dipName = 'Diploma';
+            for (final lvl in levels) {
+              if (lvl['id'] == 'UG') ugName = lvl['displayName'] ?? ugName;
+              if (lvl['id'] == 'PG') pgName = lvl['displayName'] ?? pgName;
+              if (lvl['id'] == 'DIP') dipName = lvl['displayName'] ?? dipName;
+            }
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Welcome, Staff',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 10),
-                  _card(
-                    context,
-                    icon: Icons.school_outlined,
-                    title: 'Undergraduate',
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectCourseScreen()));
-                    },
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 10),
+                      _card(
+                        context,
+                        icon: Icons.school_outlined,
+                        title: ugName,
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectCourseScreen()));
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _card(
+                        context,
+                        icon: Icons.workspace_premium_outlined,
+                        title: pgName,
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectCoursePostgradScreen()));
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _card(
+                        context,
+                        icon: Icons.assignment_outlined,
+                        title: dipName,
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectCourseDiplomaScreen()));
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  _card(
-                    context,
-                    icon: Icons.workspace_premium_outlined,
-                    title: 'Postgraduate',
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectCoursePostgradScreen()));
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _card(
-                    context,
-                    icon: Icons.assignment_outlined,
-                    title: 'Diploma',
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectCourseDiplomaScreen()));
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
         const StaffTimetableHome(),
         const AdminPanel(),

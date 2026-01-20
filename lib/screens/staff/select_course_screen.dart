@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'staff_home_screen.dart';
 import 'select_semester_screen.dart';
+import '../../services/firestore_service.dart';
 
 class SelectCourseScreen extends StatelessWidget {
   const SelectCourseScreen({super.key});
 
-  static const List<String> _courses = [
-    'BA TAM', 'BA ENG', 'BSC MAT', 'BSC BIO', 'BSC CS', 'BSC IT', 'BCA', 'BSC AIML', 'BSC DS', 'BCOM', 'BCOM CA', 'BCOM BM', 'BBA', 'BSC N&D'
-  ];
+  static const String _degreeLevelId = 'UG';
 
   @override
   Widget build(BuildContext context) {
+    final FirestoreService _firestoreService = FirestoreService();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -49,35 +49,59 @@ class SelectCourseScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: ListView.separated(
-                itemCount: _courses.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final title = _courses[index];
-                  return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => SelectSemesterScreen(courseTitle: title, degreeLevel: 'Undergraduate')),
+              child: StreamBuilder<List<Map<String, String>>>(
+                stream: _firestoreService.getCourses(_degreeLevelId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('Failed to load courses.'));
+                  }
+                  final courses = snapshot.data ?? [];
+                  if (courses.isEmpty) {
+                    return const Center(child: Text('No data available'));
+                  }
+                  return ListView.separated(
+                    itemCount: courses.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final title = courses[index]['displayName'] ?? '';
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SelectSemesterScreen(
+                                courseTitle: title,
+                                degreeLevel: 'Undergraduate',
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.book_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                              ),
+                              Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                            ],
+                          ),
+                        ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,4))],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.book_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 16),
-                          Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
-                          Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
-                        ],
-                      ),
-                    ),
                   );
                 },
               ),

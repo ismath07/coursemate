@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'staff_home_screen.dart';
+import '../../services/firestore_service.dart';
 
 class StaffViewSyllabusScreen extends StatelessWidget {
   final String subjectTitle;
@@ -11,31 +12,9 @@ class StaffViewSyllabusScreen extends StatelessWidget {
     required this.subjectCode,
   });
 
-  List<Map<String, String>> get _units => const [
-        {
-          'title': 'Unit 1: Foundations',
-          'content': 'Introduction, core concepts, and fundamental principles.',
-        },
-        {
-          'title': 'Unit 2: Applications',
-          'content': 'Applying concepts to practical scenarios and case studies.',
-        },
-        {
-          'title': 'Unit 3: Analysis',
-          'content': 'Deep dive, comparative study, and analytical methods.',
-        },
-        {
-          'title': 'Unit 4: Advanced Topics',
-          'content': 'Emerging trends, advanced techniques, and integrations.',
-        },
-        {
-          'title': 'Unit 5: Review & Assessment',
-          'content': 'Revision, problem solving, and assessment preparation.',
-        },
-      ];
-
   @override
   Widget build(BuildContext context) {
+    final FirestoreService _firestoreService = FirestoreService();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -61,39 +40,58 @@ class StaffViewSyllabusScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                subjectTitle,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-              if (subjectCode.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  subjectCode,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+        child: FutureBuilder<Map<String, dynamic>?>(
+          future: _firestoreService.getSyllabusBySubjectCode(subjectCode),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return const Center(child: Text('Failed to load syllabus.'));
+            }
+            final data = snapshot.data;
+            if (data == null) {
+              return const Center(child: Text('No data available'));
+            }
+            final units = (data['units'] as Map<String, String>? ?? {});
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    subjectTitle,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              for (final unit in _units) ...[
-                Text(
-                  unit['title'] ?? '',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  unit['content'] ?? '',
-                  style: const TextStyle(fontSize: 13),
-                ),
-                const SizedBox(height: 14),
-              ],
-            ],
-          ),
+                  if (subjectCode.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      subjectCode,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  if (units.isEmpty)
+                    const Center(child: Text('No data available'))
+                  else
+                    for (final entry in units.entries) ...[
+                      Text(
+                        entry.key,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        entry.value,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                ],
+              ),
+            );
+          },
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
