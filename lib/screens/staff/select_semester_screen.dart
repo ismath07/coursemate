@@ -6,7 +6,8 @@ import '../../services/firestore_service.dart';
 class SelectSemesterScreen extends StatelessWidget {
   final String courseTitle;
   final String? degreeLevel; // optional: 'Undergraduate' | 'Postgraduate' | 'Diploma'
-  const SelectSemesterScreen({super.key, required this.courseTitle, this.degreeLevel});
+  final String? courseId; // Firestore document ID for course
+  const SelectSemesterScreen({super.key, required this.courseTitle, this.degreeLevel, this.courseId});
 
   @override
   Widget build(BuildContext context) {
@@ -54,81 +55,139 @@ class SelectSemesterScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: StreamBuilder<List<Map<String, String>>>(
-                stream: _firestoreService.getCourses(degreeLevelId),
-                builder: (context, courseSnapshot) {
-                  if (courseSnapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (courseSnapshot.hasError) {
-                    return const Center(child: Text('Failed to load data.'));
-                  }
-                  final courses = courseSnapshot.data ?? [];
-                  final course = courses.firstWhere(
-                    (c) => (c['displayName'] ?? '') == courseTitle,
-                    orElse: () => {},
-                  );
-                  final courseId = course['id'];
-                  if (courseId == null || courseId.isEmpty) {
-                    return const Center(child: Text('No data available'));
-                  }
-                  return StreamBuilder<List<Map<String, String>>>(
-                    stream: _firestoreService.getSemesters(degreeLevelId, courseId),
-                    builder: (context, semSnapshot) {
-                      if (semSnapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (semSnapshot.hasError) {
-                        return const Center(child: Text('Failed to load semesters.'));
-                      }
-                      final semesters = semSnapshot.data ?? [];
-                      if (semesters.isEmpty) {
-                        return const Center(child: Text('No data available'));
-                      }
-                      return ListView.separated(
-                        itemCount: semesters.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final title = semesters[index]['displayName'] ?? '';
-                          return InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => StaffSelectSubjectScreen(
-                                    courseTitle: courseTitle,
-                                    semester: index + 1,
-                                    degreeLevel: degreeLevel,
+              child: (courseId != null && courseId!.isNotEmpty)
+                  ? StreamBuilder<List<Map<String, String>>>(
+                      stream: _firestoreService.getSemesters(degreeLevelId, courseId!),
+                      builder: (context, semSnapshot) {
+                        if (semSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (semSnapshot.hasError) {
+                          return const Center(child: Text('Failed to load semesters.'));
+                        }
+                        final semesters = semSnapshot.data ?? [];
+                        if (semesters.isEmpty) {
+                          return const Center(child: Text('No data available'));
+                        }
+                        return ListView.separated(
+                          itemCount: semesters.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final title = semesters[index]['displayName'] ?? '';
+                            return InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => StaffSelectSubjectScreen(
+                                      courseTitle: courseTitle,
+                                      courseId: courseId,
+                                      semester: index + 1,
+                                      degreeLevel: degreeLevel,
+                                    ),
                                   ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: const [
+                                    BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+                                  ],
                                 ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: const [
-                                  BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
-                                ],
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.school_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
+                                    const SizedBox(width: 16),
+                                    Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+                                    Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                                  ],
+                                ),
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.school_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
-                                  const SizedBox(width: 16),
-                                  Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
-                                  Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
+                            );
+                          },
+                        );
+                      },
+                    )
+                  : StreamBuilder<List<Map<String, String>>>(
+                      stream: _firestoreService.getCourses(degreeLevelId),
+                      builder: (context, courseSnapshot) {
+                        if (courseSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (courseSnapshot.hasError) {
+                          return const Center(child: Text('Failed to load data.'));
+                        }
+                        final courses = courseSnapshot.data ?? [];
+                        final course = courses.firstWhere(
+                          (c) => (c['displayName'] ?? '') == courseTitle,
+                          orElse: () => {},
+                        );
+                        final resolvedCourseId = course['id'];
+                        if (resolvedCourseId == null || resolvedCourseId.isEmpty) {
+                          return const Center(child: Text('No data available'));
+                        }
+                        return StreamBuilder<List<Map<String, String>>>(
+                          stream: _firestoreService.getSemesters(degreeLevelId, resolvedCourseId),
+                          builder: (context, semSnapshot) {
+                            if (semSnapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            if (semSnapshot.hasError) {
+                              return const Center(child: Text('Failed to load semesters.'));
+                            }
+                            final semesters = semSnapshot.data ?? [];
+                            if (semesters.isEmpty) {
+                              return const Center(child: Text('No data available'));
+                            }
+                            return ListView.separated(
+                              itemCount: semesters.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final title = semesters[index]['displayName'] ?? '';
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => StaffSelectSubjectScreen(
+                                          courseTitle: courseTitle,
+                                          courseId: resolvedCourseId,
+                                          semester: index + 1,
+                                          degreeLevel: degreeLevel,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(18),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).cardColor,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: const [
+                                        BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.school_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
+                                        const SizedBox(width: 16),
+                                        Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+                                        Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         ),

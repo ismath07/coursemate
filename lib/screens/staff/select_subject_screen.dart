@@ -7,12 +7,14 @@ class StaffSelectSubjectScreen extends StatelessWidget {
   final String courseTitle;
   final int semester;
   final String? degreeLevel;
+  final String? courseId;
 
   const StaffSelectSubjectScreen({
     super.key,
     required this.courseTitle,
     required this.semester,
     this.degreeLevel,
+    this.courseId,
   });
 
   @override
@@ -68,79 +70,101 @@ class StaffSelectSubjectScreen extends StatelessWidget {
             if (courseId == null || courseId.isEmpty) {
               return const Center(child: Text('No data available'));
             }
-            return StreamBuilder<List<Map<String, String>>>(
-              stream: _firestoreService.getSubjects(degreeLevelId, courseId, semesterId),
-              builder: (context, subjSnapshot) {
-                if (subjSnapshot.connectionState == ConnectionState.waiting) {
+            final effectiveCourseIdFuture = courseId != null && courseId!.isNotEmpty
+                ? Future.value(courseId)
+                : Future<String?>(() async {
+                    final courses = await _firestoreService.getCourses(degreeLevelId).first;
+                    final course = courses.firstWhere(
+                      (c) => (c['displayName'] ?? '') == courseTitle,
+                      orElse: () => {},
+                    );
+                    return course['id'];
+                  });
+            return FutureBuilder<String?>(
+              future: effectiveCourseIdFuture,
+              builder: (context, idSnap) {
+                if (idSnap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (subjSnapshot.hasError) {
-                  return const Center(child: Text('Failed to load subjects.'));
-                }
-                final subjects = subjSnapshot.data ?? [];
-                if (subjects.isEmpty) {
+                final effectiveCourseId = idSnap.data;
+                if (effectiveCourseId == null || effectiveCourseId.isEmpty) {
                   return const Center(child: Text('No data available'));
                 }
-                return ListView.separated(
-                  itemCount: subjects.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final subjectName = subjects[index]['displayName'] ?? '';
-                    final subjectCode = subjects[index]['subjectCode'] ?? '';
-                    return InkWell(
-                      onTap: () async {
-                        final data = await _firestoreService.getSyllabus(degreeLevelId, courseId, semesterId, subjectCode);
-                        final titleFromFirestore = data?['subjectTitle']?.toString() ?? subjectName;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StaffViewSyllabusScreen(
-                              subjectTitle: titleFromFirestore,
-                              subjectCode: subjectCode,
-                              degreeLevelId: degreeLevelId,
-                              courseId: courseId,
-                              semesterId: semesterId,
+                return StreamBuilder<List<Map<String, String>>>(
+                  stream: _firestoreService.getSubjects(degreeLevelId, effectiveCourseId, semesterId),
+                  builder: (context, subjSnapshot) {
+                    if (subjSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (subjSnapshot.hasError) {
+                      return const Center(child: Text('Failed to load subjects.'));
+                    }
+                    final subjects = subjSnapshot.data ?? [];
+                    if (subjects.isEmpty) {
+                      return const Center(child: Text('No data available'));
+                    }
+                    return ListView.separated(
+                      itemCount: subjects.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final subjectName = subjects[index]['displayName'] ?? '';
+                        final subjectCode = subjects[index]['subjectCode'] ?? '';
+                        return InkWell(
+                          onTap: () async {
+                            final data = await _firestoreService.getSyllabus(degreeLevelId, effectiveCourseId, semesterId, subjectCode);
+                            final titleFromFirestore = data?['subjectTitle']?.toString() ?? subjectName;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => StaffViewSyllabusScreen(
+                                  subjectTitle: titleFromFirestore,
+                                  subjectCode: subjectCode,
+                                  degreeLevelId: degreeLevelId,
+                                  courseId: effectiveCourseId,
+                                  semesterId: semesterId,
+                                ),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: const [
+                                BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.menu_book_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        subjectName,
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        subjectCode,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                              ],
                             ),
                           ),
                         );
                       },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.menu_book_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    subjectName,
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    subjectCode,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
-                          ],
-                        ),
-                      ),
                     );
                   },
                 );

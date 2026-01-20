@@ -72,6 +72,7 @@ class SelectCourseStudentScreen extends StatelessWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final title = courses[index]['displayName'] ?? '';
+                      final courseId = courses[index]['id'] ?? '';
                       return InkWell(
                         onTap: () {
                           if (degreeLevel == 'Diploma') {
@@ -82,6 +83,7 @@ class SelectCourseStudentScreen extends StatelessWidget {
                               MaterialPageRoute(
                                 builder: (_) => SelectSemesterScreen(
                                   courseTitle: title,
+                                  courseId: courseId,
                                   degreeLevel: degreeLevel,
                                 ),
                               ),
