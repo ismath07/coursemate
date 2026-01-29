@@ -20,7 +20,7 @@ class StaffViewSyllabusScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final FirestoreService _firestoreService = FirestoreService();
+    final FirestoreService firestoreService = FirestoreService();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -47,7 +47,7 @@ class StaffViewSyllabusScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: FutureBuilder<Map<String, dynamic>?>(
-          future: _firestoreService.getSyllabus(degreeLevelId, courseId, semesterId, subjectCode),
+          future: firestoreService.getSyllabus(degreeLevelId, courseId, semesterId, subjectCode),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());

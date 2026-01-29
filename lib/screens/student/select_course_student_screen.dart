@@ -9,7 +9,7 @@ class SelectCourseStudentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final FirestoreService _firestoreService = FirestoreService();
+    final FirestoreService firestoreService = FirestoreService();
     final String degreeLevelId = () {
       if (degreeLevel == 'Undergraduate') return 'UG';
       if (degreeLevel == 'Postgraduate') return 'PG';
@@ -55,7 +55,7 @@ class SelectCourseStudentScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Expanded(
               child: StreamBuilder<List<Map<String, String>>>(
-                stream: _firestoreService.getCourses(degreeLevelId),
+                stream: firestoreService.getCourses(degreeLevelId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());

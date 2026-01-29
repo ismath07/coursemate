@@ -122,4 +122,24 @@ class FirestoreService {
       'units': rawUnits is Map ? Map<String, dynamic>.from(rawUnits) : <String, dynamic>{},
     };
   }
+
+  // Reads exam hall allotments from exam_hall_allotments/{examId}/rows ordered by 'sno'
+  Future<List<Map<String, dynamic>>> getHallAllotments(String examId) async {
+    final snapshot = await _firestore
+        .collection('exam_hall_allotments')
+        .doc(examId)
+        .collection('rows')
+        .orderBy('sno')
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'sno': data['sno'],
+        'yearDept': (data['yearDept'] is List) ? List<String>.from(data['yearDept']) : <String>[],
+        'regNos': (data['regNos'] is List) ? List<String>.from(data['regNos']) : <String>[],
+        'hallNo': (data['hallNo'] ?? '').toString(),
+      };
+    }).toList();
+  }
 }

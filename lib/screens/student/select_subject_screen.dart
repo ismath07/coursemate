@@ -19,7 +19,7 @@ class SelectSubjectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final FirestoreService _firestoreService = FirestoreService();
+    final FirestoreService firestoreService = FirestoreService();
     final String degreeLevelId = () {
       if (degreeLevel == 'Undergraduate') return 'UG';
       if (degreeLevel == 'Postgraduate') return 'PG';
@@ -54,7 +54,7 @@ class SelectSubjectScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: (courseId != null && courseId!.isNotEmpty)
             ? StreamBuilder<List<Map<String, String>>>(
-                stream: _firestoreService.getSubjects(degreeLevelId, courseId!, semesterId),
+                stream: firestoreService.getSubjects(degreeLevelId, courseId!, semesterId),
                 builder: (context, subjSnapshot) {
                   if (subjSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -74,7 +74,7 @@ class SelectSubjectScreen extends StatelessWidget {
                       final subjectCode = subjects[index]['subjectCode'] ?? '';
                       return InkWell(
                         onTap: () async {
-                          final data = await _firestoreService.getSyllabus(degreeLevelId, courseId!, semesterId, subjectCode);
+                          final data = await firestoreService.getSyllabus(degreeLevelId, courseId!, semesterId, subjectCode);
                           final titleFromFirestore = data?['subjectTitle']?.toString() ?? subjectName;
                           Navigator.push(
                             context,
@@ -132,7 +132,7 @@ class SelectSubjectScreen extends StatelessWidget {
                 },
               )
             : StreamBuilder<List<Map<String, String>>>(
-                stream: _firestoreService.getCourses(degreeLevelId),
+                stream: firestoreService.getCourses(degreeLevelId),
                 builder: (context, courseSnapshot) {
                   if (courseSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -150,7 +150,7 @@ class SelectSubjectScreen extends StatelessWidget {
                     return const Center(child: Text('No data available'));
                   }
                   return StreamBuilder<List<Map<String, String>>>(
-                    stream: _firestoreService.getSubjects(degreeLevelId, resolvedCourseId, semesterId),
+                    stream: firestoreService.getSubjects(degreeLevelId, resolvedCourseId, semesterId),
                     builder: (context, subjSnapshot) {
                       if (subjSnapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -170,7 +170,7 @@ class SelectSubjectScreen extends StatelessWidget {
                           final subjectCode = subjects[index]['subjectCode'] ?? '';
                           return InkWell(
                             onTap: () async {
-                              final data = await _firestoreService.getSyllabus(degreeLevelId, resolvedCourseId, semesterId, subjectCode);
+                              final data = await firestoreService.getSyllabus(degreeLevelId, resolvedCourseId, semesterId, subjectCode);
                               final titleFromFirestore = data?['subjectTitle']?.toString() ?? subjectName;
                               Navigator.push(
                                 context,

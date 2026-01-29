@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
 import 'student_home_screen.dart';
+import '../../services/firestore_service.dart';
 
 class StudentViewHallAllotmentScreen extends StatelessWidget {
   const StudentViewHallAllotmentScreen({super.key});
 
-  List<Map<String, String>> get _rows => List.generate(12, (index) {
-        final no = index + 1;
-        return {
-          'class': 'BSc CS - A',
-          'regNo': '22CS10${no.toString().padLeft(2, '0')}',
-          'hall': 'Hall ${String.fromCharCode(65 + (index % 4))}',
-          'total': '40',
-        };
-      });
+  static const String _examId = '2026_april';
 
   @override
   Widget build(BuildContext context) {
-    final rows = _rows;
+    final FirestoreService firestoreService = FirestoreService();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -43,69 +36,51 @@ class StudentViewHallAllotmentScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: const [
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Class',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Register No.',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Hall',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Total Students',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: firestoreService.getHallAllotments(_examId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return const Center(child: Text('Failed to load hall allotments.'));
+            }
+            final rows = snapshot.data ?? [];
+            if (rows.isEmpty) {
+              return const Center(child: Text('No data available'));
+            }
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SingleChildScrollView(
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('S.NO')),
+                    DataColumn(label: Text('YEAR / DEPT')),
+                    DataColumn(label: Text('REG. NO')),
+                    DataColumn(label: Text('HALL')),
                   ],
+                  rows: rows.map((row) {
+                    final sno = row['sno']?.toString() ?? '';
+                    final yearDept = (row['yearDept'] is List)
+                        ? (row['yearDept'] as List).map((e) => e.toString()).join('\n')
+                        : '';
+                    final regNos = (row['regNos'] is List)
+                        ? (row['regNos'] as List).map((e) => e.toString()).join('\n')
+                        : '';
+                    final hallNo = row['hallNo']?.toString() ?? '';
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(sno)),
+                        DataCell(Text(yearDept)),
+                        DataCell(Text(regNos)),
+                        DataCell(Text(hallNo)),
+                      ],
+                    );
+                  }).toList(),
                 ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: rows.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final row = rows[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            Expanded(flex: 2, child: Text(row['class'] ?? '')),
-                            Expanded(flex: 2, child: Text(row['regNo'] ?? '')),
-                            Expanded(flex: 2, child: Text(row['hall'] ?? '')),
-                            Expanded(flex: 2, child: Text(row['total'] ?? '')),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(

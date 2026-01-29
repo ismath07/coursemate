@@ -10,7 +10,7 @@ class SelectCourseDiplomaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final FirestoreService _firestoreService = FirestoreService();
+    final FirestoreService firestoreService = FirestoreService();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -50,7 +50,7 @@ class SelectCourseDiplomaScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Expanded(
               child: StreamBuilder<List<Map<String, String>>>(
-                stream: _firestoreService.getCourses(_degreeLevelId),
+                stream: firestoreService.getCourses(_degreeLevelId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());

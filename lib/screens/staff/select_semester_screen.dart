@@ -11,7 +11,7 @@ class SelectSemesterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final FirestoreService _firestoreService = FirestoreService();
+    final FirestoreService firestoreService = FirestoreService();
     final String degreeLevelId = () {
       if (degreeLevel == 'Undergraduate') return 'UG';
       if (degreeLevel == 'Postgraduate') return 'PG';
@@ -57,7 +57,7 @@ class SelectSemesterScreen extends StatelessWidget {
             Expanded(
               child: (courseId != null && courseId!.isNotEmpty)
                   ? StreamBuilder<List<Map<String, String>>>(
-                      stream: _firestoreService.getSemesters(degreeLevelId, courseId!),
+                      stream: firestoreService.getSemesters(degreeLevelId, courseId!),
                       builder: (context, semSnapshot) {
                         if (semSnapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
@@ -113,7 +113,7 @@ class SelectSemesterScreen extends StatelessWidget {
                       },
                     )
                   : StreamBuilder<List<Map<String, String>>>(
-                      stream: _firestoreService.getCourses(degreeLevelId),
+                      stream: firestoreService.getCourses(degreeLevelId),
                       builder: (context, courseSnapshot) {
                         if (courseSnapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
@@ -131,7 +131,7 @@ class SelectSemesterScreen extends StatelessWidget {
                           return const Center(child: Text('No data available'));
                         }
                         return StreamBuilder<List<Map<String, String>>>(
-                          stream: _firestoreService.getSemesters(degreeLevelId, resolvedCourseId),
+                          stream: firestoreService.getSemesters(degreeLevelId, resolvedCourseId),
                           builder: (context, semSnapshot) {
                             if (semSnapshot.connectionState == ConnectionState.waiting) {
                               return const Center(child: CircularProgressIndicator());
