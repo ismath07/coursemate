@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /* ============================================================
      SYLLABUS FLOW (already working – unchanged)
@@ -127,15 +129,7 @@ class FirestoreService {
   }
 
   /* ============================================================
-     HALL ALLOTMENT FLOW (NEW – clean & correct)
-     Firestore structure:
-     exam_hall_allotments
-       └── UG
-           ├── displayName
-           └── nov_2025
-               ├── meta
-               └── rows
-                   └── autoId
+     HALL ALLOTMENT FLOW
      ============================================================ */
 
   // 🔹 UG / PG cards
@@ -185,8 +179,27 @@ class FirestoreService {
         'yearDept': List<String>.from(data['yearDept'] ?? []),
         'regNumbers': List<String>.from(data['regNumbers'] ?? []),
         'hallNo': (data['hallNo'] ?? '').toString(),
-        'noOfStudents' : data['noOfStudents'],
+        'noOfStudents': data['noOfStudents'],
       };
     }).toList();
+  }
+
+  /* ============================================================
+     PROFILE FLOW (NEW – Staff & Student)
+     ============================================================ */
+
+  // 🔹 Get current logged-in user profile
+  Future<Map<String, dynamic>?> getCurrentUserProfile() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final doc = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (!doc.exists) return null;
+
+    return doc.data();
   }
 }

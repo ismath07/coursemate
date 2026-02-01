@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme_notifier.dart';
 import '../auth/login_screen.dart';
 
@@ -12,20 +14,6 @@ class StaffProfileScreen extends StatefulWidget {
 }
 
 class _StaffProfileScreenState extends State<StaffProfileScreen> {
-  String staffName = 'Staff Member';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStaffName();
-  }
-
-  Future<void> _loadStaffName() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      staffName = prefs.getString('staff_name') ?? 'Staff Member';
-    });
-  }
 
   Future<void> _handleEditProfile(BuildContext context) async {
     await showDialog<void>(
@@ -63,16 +51,29 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
     );
 
     if (confirm == true && context.mounted) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await user.delete();
+        }
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting account: $e')));
+        }
+      }
     }
   }
+
   Future<void> _handleLogout(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -87,14 +88,17 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
     );
 
     if (confirm == true && context.mounted) {
+      await FirebaseAuth.instance.signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
     }
   }
 
@@ -124,6 +128,8 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       body: Column(
         children: [
@@ -135,41 +141,70 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                 children: [
                   // Centered profile header (avatar, name, email)
                   Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          child: const Icon(Icons.person, color: Colors.white),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(staffName, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 18, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 12),
-                        Material(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () async {
-                              const email = 'staff@example.com';
-                              await Clipboard.setData(const ClipboardData(text: email));
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email copied to clipboard')));
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(Icons.email, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('staff@example.com'),
-                                ],
+                    child: FutureBuilder<DocumentSnapshot>(
+                      future: user != null 
+                          ? FirebaseFirestore.instance.collection('users').doc(user.uid).get()
+                          : null,
+                      builder: (context, snapshot) {
+                        String name = 'Staff Member';
+                        String email = 'staff@example.com';
+                        bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+
+                        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                          final data = snapshot.data!.data() as Map<String, dynamic>;
+                          name = data['name'] ?? 'Staff Member';
+                          email = data['email'] ?? 'staff@example.com';
+                        } else if (user != null) {
+                            email = user.email ?? 'staff@example.com';
+                        }
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: 40,
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              child: isLoading 
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Icon(Icons.person, color: Colors.white),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              isLoading ? 'Loading...' : name,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontSize: 18, 
+                                fontWeight: FontWeight.w600
+                              )
+                            ),
+                            const SizedBox(height: 12),
+                            Material(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  if (isLoading) return;
+                                  await Clipboard.setData(ClipboardData(text: email));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email copied to clipboard')));
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.email, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(isLoading ? '...' : email),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
+                          ],
+                        );
+                      }
                     ),
                   ),
 
@@ -197,7 +232,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                     color: Colors.red,
                     onTap: () => _handleLogout(context),
                   ),
-
+                  
                   _profileOption(
                     icon: Icons.delete_outline,
                     title: 'Delete Account',
