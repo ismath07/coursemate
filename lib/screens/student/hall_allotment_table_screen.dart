@@ -79,6 +79,7 @@ class HallAllotmentTableScreen extends StatelessWidget {
                           DataColumn(label: Text('Year/Dept')),
                           DataColumn(label: Text('Register Numbers')),
                           DataColumn(label: Text('HallNo')),
+                          DataColumn(label: Text('No.of Students')),
                         ],
                         rows: rows.map((row) {
                           final sno = row['sno']?.toString() ?? '';
@@ -89,12 +90,14 @@ class HallAllotmentTableScreen extends StatelessWidget {
                               ? (row['regNumbers'] as List).map((e) => e.toString()).join('\n')
                               : '';
                               final hallNo = row['hallNo']?.toString() ?? '';
+                              final noOfStudents = row['noOfStudents']?.toString() ?? '';
                           return DataRow(
                             cells: [
                               DataCell(Text(sno)),
                               DataCell(Text(yearDept)),
                               DataCell(Text(regNos)),
                               DataCell(Text(hallNo)),
+                              DataCell(Text(noOfStudents)),
                             ],
                           );
                         }).toList(),

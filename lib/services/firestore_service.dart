@@ -185,6 +185,7 @@ class FirestoreService {
         'yearDept': List<String>.from(data['yearDept'] ?? []),
         'regNumbers': List<String>.from(data['regNumbers'] ?? []),
         'hallNo': (data['hallNo'] ?? '').toString(),
+        'noOfStudents' : data['noOfStudents'],
       };
     }).toList();
   }
