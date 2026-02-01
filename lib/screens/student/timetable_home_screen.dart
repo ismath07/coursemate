@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'select_degree_timetable_screen.dart';
+import 'view_hall_allotment_screen.dart';
 
 class TimetableHomeScreen extends StatelessWidget {
   const TimetableHomeScreen({super.key});
@@ -44,7 +44,7 @@ class TimetableHomeScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SelectDegreeTimetableStudentScreen()),
+                MaterialPageRoute(builder: (_) => const StudentViewHallAllotmentScreen()),
               );
             },
           ),

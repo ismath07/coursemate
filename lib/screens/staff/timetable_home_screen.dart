@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'select_degree_timetable_screen.dart';
+import 'view_hall_allotment_screen.dart';
 
 class StaffTimetableHome extends StatelessWidget {
   const StaffTimetableHome({super.key});
@@ -44,7 +44,7 @@ class StaffTimetableHome extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SelectDegreeTimetableStaffScreen()),
+                MaterialPageRoute(builder: (_) => const StaffViewHallAllotmentScreen()),
               );
             },
           ),

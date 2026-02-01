@@ -3,7 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Returns a stream of degree levels as clean maps: { id, displayName }
+  /* ============================================================
+     SYLLABUS FLOW (already working – unchanged)
+     ============================================================ */
+
+  // Degree levels (UG / PG etc.)
   Stream<List<Map<String, String>>> getDegreeLevels() {
     return _firestore
         .collection('degree_levels')
@@ -20,7 +24,7 @@ class FirestoreService {
     });
   }
 
-  // Returns a stream of courses for a degree level: { id, displayName }
+  // Courses
   Stream<List<Map<String, String>>> getCourses(String degreeLevelId) {
     return _firestore
         .collection('degree_levels')
@@ -39,7 +43,7 @@ class FirestoreService {
     });
   }
 
-  // Returns a stream of semesters for a course: { id, displayName }
+  // Semesters
   Stream<List<Map<String, String>>> getSemesters(
     String degreeLevelId,
     String courseId,
@@ -63,7 +67,7 @@ class FirestoreService {
     });
   }
 
-  // Returns a stream of subjects for a semester: { id, displayName, subjectCode }
+  // Subjects
   Stream<List<Map<String, String>>> getSubjects(
     String degreeLevelId,
     String courseId,
@@ -91,8 +95,7 @@ class FirestoreService {
     });
   }
 
-  // Returns syllabus data for a subject as a clean map:
-  // { subjectTitle: String, units: Map<String, dynamic> }
+  // Syllabus content
   Future<Map<String, dynamic>?> getSyllabus(
     String degreeLevelId,
     String courseId,
@@ -111,33 +114,76 @@ class FirestoreService {
 
     final doc = await docRef.get();
     if (!doc.exists) return null;
+
     final data = doc.data();
     if (data == null) return null;
 
-    final title = (data['subjectTitle'] ?? '').toString();
-    final rawUnits = data['units'] ?? {};
-
     return {
-      'subjectTitle': title,
-      'units': rawUnits is Map ? Map<String, dynamic>.from(rawUnits) : <String, dynamic>{},
+      'subjectTitle': (data['subjectTitle'] ?? '').toString(),
+      'units': data['units'] is Map
+          ? Map<String, dynamic>.from(data['units'])
+          : <String, dynamic>{},
     };
   }
 
-  // Reads exam hall allotments from exam_hall_allotments/{examId}/rows ordered by 'sno'
-  Future<List<Map<String, dynamic>>> getHallAllotments(String examId) async {
+  /* ============================================================
+     HALL ALLOTMENT FLOW (NEW – clean & correct)
+     Firestore structure:
+     exam_hall_allotments
+       └── UG
+           ├── displayName
+           └── nov_2025
+               ├── meta
+               └── rows
+                   └── autoId
+     ============================================================ */
+
+  // 🔹 UG / PG cards
+  Stream<List<Map<String, String>>> getHallDegrees() {
+    return _firestore
+        .collection('exam_hall_allotments')
+        .get()
+        .asStream()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id, // UG / PG
+          'displayName': (data['displayName'] ?? doc.id).toString(),
+        };
+      }).toList();
+    });
+  }
+
+  // 🔹 Hall allotment table rows
+  Future<List<Map<String, dynamic>>> getHallAllotmentRows({
+    required String degreeId, // UG / PG
+    required String examId,   // nov_2025
+  }) async {
     final snapshot = await _firestore
         .collection('exam_hall_allotments')
-        .doc(examId)
-        .collection('rows')
+        .doc(degreeId)
+        .collection(examId)
         .orderBy('sno')
         .get();
 
-    return snapshot.docs.map((doc) {
+    final docs = snapshot.docs;
+
+    // Sort by sno
+    docs.sort((a, b) {
+      final sa = a.data()['sno'];
+      final sb = b.data()['sno'];
+      final na = sa is num ? sa.toInt() : int.tryParse(sa.toString()) ?? 0;
+      final nb = sb is num ? sb.toInt() : int.tryParse(sb.toString()) ?? 0;
+      return na.compareTo(nb);
+    });
+
+    return docs.map((doc) {
       final data = doc.data();
       return {
         'sno': data['sno'],
-        'yearDept': (data['yearDept'] is List) ? List<String>.from(data['yearDept']) : <String>[],
-        'regNos': (data['regNos'] is List) ? List<String>.from(data['regNos']) : <String>[],
+        'yearDept': List<String>.from(data['yearDept'] ?? []),
+        'regNumbers': List<String>.from(data['regNumbers'] ?? []),
         'hallNo': (data['hallNo'] ?? '').toString(),
       };
     }).toList();
