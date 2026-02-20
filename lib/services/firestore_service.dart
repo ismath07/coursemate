@@ -213,6 +213,39 @@ class FirestoreService {
     return null;
   }
 
+  Future<bool> isAdminApproved() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    // Prefer staff_accounts for staff users if present
+    final staffDoc = await _firestore
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .get();
+
+    if (staffDoc.exists) {
+      final data = staffDoc.data();
+      if (data != null && data['adminApproved'] is bool) {
+        return data['adminApproved'] as bool;
+      }
+    }
+
+    // Fallback to users collection (students / legacy staff)
+    final userDoc = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (userDoc.exists) {
+      final data = userDoc.data();
+      if (data != null && data['adminApproved'] is bool) {
+        return data['adminApproved'] as bool;
+      }
+    }
+
+    return false;
+  }
+
   Future<void> updateUserProfile({required String name}) async {
     final user = _auth.currentUser;
     if (user == null) return;

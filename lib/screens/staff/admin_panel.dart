@@ -1,107 +1,158 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../services/firestore_service.dart';
+import 'view_hall_allotment_screen.dart';
 
 class AdminPanel extends StatelessWidget {
   const AdminPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
-      body: Column(
-        children: [
-          // Title (use AppBar gradient only; keep body non-gradient)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Admin Panel',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
+      body: user == null
+          ? const Center(child: CircularProgressIndicator())
+          : FutureBuilder<bool>(
+              future: FirestoreService().isAdminApproved(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          // Extra admin action bar
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            color: Theme.of(context).cardColor,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _adminAction(context, Icons.announcement, 'Announcements'),
-                  const SizedBox(width: 8),
-                  _adminAction(context, Icons.book_online, 'Manage Courses'),
-                  const SizedBox(width: 8),
-                  _adminAction(context, Icons.people, 'Users'),
-                  const SizedBox(width: 8),
-                  _adminAction(context, Icons.settings, 'Settings'),
-                ],
-              ),
-            ),
-          ),
+                final bool isApproved = snapshot.data == true;
 
-          const SizedBox(height: 12),
+                if (!isApproved) {
+                  return _buildAccessRequestView(context, user.uid);
+                }
 
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ListView(
-                children: [
-                  _panelCard(context, 'System Logs', 'View recent system activity'),
-                  const SizedBox(height: 12),
-                  _panelCard(context, 'Course Approvals', 'Approve or reject course changes'),
-                  const SizedBox(height: 12),
-                  _panelCard(context, 'User Reports', 'Review flagged users or content'),
-                ],
-              ),
+                return _buildApprovedView(context);
+              },
             ),
-          ),
-        ],
+    );
+  }
+
+  Widget _buildAccessRequestView(BuildContext context, String uid) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(uid)
+                    .set(
+                      {'adminApproved': false},
+                      SetOptions(merge: true),
+                    );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Access'),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'This area requires administrator approval.',
+              textAlign: TextAlign.center,
+            ),
+            const Text(
+              'Please contact admin to enable access.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _adminAction(BuildContext context, IconData icon, String label) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-      ),
-      onPressed: () {},
-      icon: Icon(icon, size: 18),
-      label: Text(label),
+  Widget _buildApprovedView(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            'Admin Panel',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: _hallAllotmentCard(context),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _panelCard(BuildContext context, String title, String subtitle) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyMedium?.color)),
-                const SizedBox(height: 6),
-                Text(subtitle, style: const TextStyle(color: Colors.grey)),
-              ],
-            ),
+  Widget _hallAllotmentCard(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const StaffViewHallAllotmentScreen(),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
-            onPressed: () {},
-            child: const Text('Open'),
-          )
-        ],
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.apartment_outlined,
+              size: 28,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Staff Hall Allotment',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Manage and assign hall allotments',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16),
+          ],
+        ),
       ),
     );
   }
