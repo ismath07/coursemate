@@ -185,21 +185,75 @@ class FirestoreService {
   }
 
   /* ============================================================
-     PROFILE FLOW (NEW – Staff & Student)
+     PROFILE & ROLE FLOW (Staff & Student)
      ============================================================ */
 
-  // 🔹 Get current logged-in user profile
-  Future<Map<String, dynamic>?> getCurrentUserProfile() async {
+  Future<String?> getUserRole() async {
     final user = _auth.currentUser;
     if (user == null) return null;
 
-    final doc = await _firestore
+    final staffDoc = await _firestore
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .get();
+
+    if (staffDoc.exists) {
+      return 'staff';
+    }
+
+    final studentDoc = await _firestore
         .collection('users')
         .doc(user.uid)
         .get();
 
-    if (!doc.exists) return null;
+    if (studentDoc.exists) {
+      return 'student';
+    }
 
-    return doc.data();
+    return null;
+  }
+
+  Future<void> updateUserProfile({required String name}) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final role = await getUserRole();
+
+    if (role == 'staff') {
+      await _firestore
+          .collection('staff_accounts')
+          .doc(user.uid)
+          .update({'name': name});
+    } else if (role == 'student') {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .update({'name': name});
+    }
+  }
+
+  Future<Map<String, dynamic>?> getCurrentUserProfile() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final role = await getUserRole();
+
+    if (role == 'staff') {
+      final doc = await _firestore
+          .collection('staff_accounts')
+          .doc(user.uid)
+          .get();
+      if (!doc.exists) return null;
+      return doc.data();
+    } else if (role == 'student') {
+      final doc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (!doc.exists) return null;
+      return doc.data();
+    }
+
+    return null;
   }
 }

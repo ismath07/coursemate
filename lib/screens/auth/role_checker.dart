@@ -1,10 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../staff/staff_home_screen.dart';
 import '../student/student_home_screen.dart';
 import 'login_screen.dart';
+import '../../services/firestore_service.dart';
 
 class RoleChecker extends StatelessWidget {
   const RoleChecker({super.key});
@@ -18,11 +18,8 @@ class RoleChecker extends StatelessWidget {
       return const LoginScreen();
     }
 
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get(),
+    return FutureBuilder<String?>(
+      future: FirestoreService().getUserRole(),
       builder: (context, snapshot) {
         // 🔄 Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -31,16 +28,13 @@ class RoleChecker extends StatelessWidget {
           );
         }
 
-        // ❌ If document not found or error
-        if (!snapshot.hasData || !snapshot.data!.exists) {
+        // ❌ If role not found or error
+        if (!snapshot.hasData || snapshot.data == null) {
           return const LoginScreen();
         }
 
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-
         // ✅ DEFENSIVE FIX: normalize role
-        final String role =
-            (data['role'] ?? '').toString().toLowerCase();
+        final String role = (snapshot.data ?? '').toLowerCase();
 
         // 🧪 DEBUG LOG (keep while testing)
         debugPrint('LOGGED IN ROLE => $role');

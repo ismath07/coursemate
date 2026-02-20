@@ -44,14 +44,18 @@ class _SignupScreenState extends State<SignupScreen> {
         password: password,
       );
 
-      // 🗄 Save to Firestore
+      final uid = userCredential.user!.uid;
+      final normalizedRole = role!.toLowerCase();
+      final collectionName =
+          normalizedRole == 'staff' ? 'staff_accounts' : 'users';
+
       await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
+          .collection(collectionName)
+          .doc(uid)
           .set({
         'name': name,
         'email': email,
-        'role': role,
+        'role': normalizedRole,
         'createdAt': Timestamp.now(),
       });
 

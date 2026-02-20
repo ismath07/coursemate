@@ -142,8 +142,11 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                   // Centered profile header (avatar, name, email)
                   Center(
                     child: FutureBuilder<DocumentSnapshot>(
-                      future: user != null 
-                          ? FirebaseFirestore.instance.collection('users').doc(user.uid).get()
+                      future: user != null
+                          ? FirebaseFirestore.instance
+                              .collection('staff_accounts')
+                              .doc(user.uid)
+                              .get()
                           : null,
                       builder: (context, snapshot) {
                         String name = 'Staff Member';
