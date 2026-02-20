@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../services/firestore_service.dart';
-import 'view_hall_allotment_screen.dart';
+import 'staff_hall_allotment_screen.dart';
 
 class AdminPanel extends StatelessWidget {
   const AdminPanel({super.key});
@@ -86,12 +86,16 @@ class AdminPanel extends StatelessWidget {
                 ),
           ),
         ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: _hallAllotmentCard(context),
-          ),
-        ),
+        SingleChildScrollView(
+  child: Padding(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      children: [
+        _hallAllotmentCard(context),
+      ],
+    ),
+  ),
+)
       ],
     );
   }
@@ -102,7 +106,7 @@ class AdminPanel extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const StaffViewHallAllotmentScreen(),
+            builder: (context) => const StaffHallAllotmentScreen(),
           ),
         );
       },

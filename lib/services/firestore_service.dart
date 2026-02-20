@@ -286,7 +286,27 @@ class FirestoreService {
       if (!doc.exists) return null;
       return doc.data();
     }
+    
 
     return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getStaffHallAllotments() async {
+    final snapshot = await _firestore
+        .collection('staff_hall_allotments')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+
+      return {
+        'id': doc.id,
+        'staffName': data['staffName'] ?? '',
+        'hallNo': data['hallNo'] ?? '',
+        'noOfStudents': data['noOfStudents'] ?? [],
+        'createdAt': data['createdAt'],
+      };
+    }).toList();
   }
 }
