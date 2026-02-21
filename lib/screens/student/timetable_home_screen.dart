@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'view_hall_allotment_screen.dart';
+import '../staff/select_degree_exam_timetable_screen.dart';
+
 
 class TimetableHomeScreen extends StatelessWidget {
   const TimetableHomeScreen({super.key});
@@ -30,6 +32,11 @@ class TimetableHomeScreen extends StatelessWidget {
             title: 'Exam Timetable',
             subtitle: 'View UG / PG exam schedule',
             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SelectDegreeExamTimetableScreen()),
+              );
+             
               // TODO: Navigate to Exam Timetable
             },
           ),

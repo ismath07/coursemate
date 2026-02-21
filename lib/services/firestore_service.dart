@@ -291,6 +291,108 @@ class FirestoreService {
     return null;
   }
 
+/* ============================================================
+   EXAM TIMETABLE FLOW
+   ============================================================ */
+
+/// Get UG / PG
+Stream<List<Map<String, String>>> getExamDegrees() {
+  return _firestore
+      .collection('exam_timetables')
+      .orderBy('displayName')
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+
+      return {
+        'id': doc.id,
+        'displayName': (data['displayName'] ?? doc.id).toString(),
+      };
+    }).toList();
+  });
+}
+
+/// Get Departments
+Stream<List<Map<String, String>>> getExamDepartments(
+  String degreeId,
+) {
+  return _firestore
+      .collection('exam_timetables')
+      .doc(degreeId)
+      .collection('departments')
+      .orderBy('displayName')
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+
+      return {
+        'id': doc.id,
+        'displayName': (data['displayName'] ?? doc.id).toString(),
+      };
+    }).toList();
+  });
+}
+
+/// Get Years
+Stream<List<Map<String, String>>> getExamYears(
+  String degreeId,
+  String departmentId,
+) {
+  return _firestore
+      .collection('exam_timetables')
+      .doc(degreeId)
+      .collection('departments')
+      .doc(departmentId)
+      .collection('years')
+      .orderBy('displayName')
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+
+      return {
+        'id': doc.id,
+        'displayName': (data['displayName'] ?? doc.id).toString(),
+      };
+    }).toList();
+  });
+}
+
+/// Get Exams (Timetable rows)
+Stream<List<Map<String, dynamic>>> getExamTimetable(
+  String degreeId,
+  String departmentId,
+  String yearId,
+) {
+  return _firestore
+      .collection('exam_timetables')
+      .doc(degreeId)
+      .collection('departments')
+      .doc(departmentId)
+      .collection('years')
+      .doc(yearId)
+      .collection('exams')
+      .orderBy('date')
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+
+      return {
+        'id': doc.id,
+        'title': data['title'] ?? '',
+        'subjectCode': data['subjectCode'] ?? '',
+        'date': data['date'] ?? '',
+        'day': data['day'] ?? '',
+        'session': data['session'] ?? '',
+      };
+    }).toList();
+  });
+}
+
+
   Future<List<Map<String, dynamic>>> getStaffHallAllotments() async {
     final snapshot = await _firestore
         .collection('staff_hall_allotments')
@@ -307,6 +409,7 @@ class FirestoreService {
         'noOfStudents': data['noOfStudents'] ?? [],
         'createdAt': data['createdAt'],
       };
+
     }).toList();
   }
 }
