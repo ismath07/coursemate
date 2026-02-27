@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/auth/splash_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/staff/staff_home_screen.dart';
+import 'screens/student/student_home_screen.dart';
+import 'services/firestore_service.dart';
 import 'theme_notifier.dart';
 
 
@@ -55,8 +59,61 @@ class CourseMateApp extends StatelessWidget {
             textTheme:
                 const TextTheme(bodyMedium: TextStyle(color: Colors.white70)),
           ),
-          home: const SplashScreen(),
+          home: const AuthWrapper(),
       
+        );
+      },
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Show loading while checking auth state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // User is NOT logged in → show LoginScreen
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const LoginScreen();
+        }
+
+        // User IS logged in → check role and navigate accordingly
+        return FutureBuilder<String?>(
+          future: FirestoreService().getUserRole(),
+          builder: (context, roleSnapshot) {
+            // Show loading while fetching role
+            if (roleSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
+            final role = roleSnapshot.data;
+
+            // Navigate based on role
+            if (role == 'staff') {
+              return const StaffHomeScreen();
+            } else if (role == 'student') {
+              return const StudentHomeScreen();
+            } else {
+              // Role not found → show LoginScreen
+              return const LoginScreen();
+            }
+          },
         );
       },
     );
