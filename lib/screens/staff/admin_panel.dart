@@ -92,6 +92,8 @@ class AdminPanel extends StatelessWidget {
     child: Column(
       children: [
         _hallAllotmentCard(context),
+        const SizedBox(height: 16),
+        _syllabusAccessCard(context),
       ],
     ),
   ),
@@ -158,6 +160,97 @@ class AdminPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _syllabusAccessCard(BuildContext context) {
+    return StreamBuilder<bool>(
+      stream: FirestoreService().getSyllabusTimetableAccess(),
+      builder: (context, snapshot) {
+        final isEnabled = snapshot.data ?? false;
+
+        return InkWell(
+          onTap: () async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(isEnabled ? 'Disable Access?' : 'Enable Access?'),
+                content: Text(
+                  isEnabled
+                      ? 'Staff will not be able to edit syllabus and timetable.'
+                      : 'Staff will be able to edit syllabus and timetable.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Confirm'),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirm == true) {
+              await FirestoreService().toggleSyllabusTimetableAccess(!isEnabled);
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_note_outlined,
+                  size: 28,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Syllabus & Timetable Access',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Enable editing of syllabus and timetable',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isEnabled ? Icons.check_circle : Icons.lock,
+                  size: 24,
+                  color: isEnabled ? Colors.green : Colors.red,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

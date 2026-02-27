@@ -11,7 +11,13 @@ class SelectCourseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final FirestoreService firestoreService = FirestoreService();
-    return Scaffold(
+    
+    return StreamBuilder<bool>(
+      stream: firestoreService.getSyllabusTimetableAccess(),
+      builder: (context, accessSnapshot) {
+        final hasAccess = accessSnapshot.data ?? false;
+
+        return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Select Course', style: TextStyle(color: Colors.white)),
@@ -67,6 +73,8 @@ class SelectCourseScreen extends StatelessWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final title = courses[index]['displayName'] ?? '';
+                      final courseId = courses[index]['id'] ?? '';
+                      
                       return InkWell(
                         onTap: () {
                           Navigator.push(
@@ -74,6 +82,7 @@ class SelectCourseScreen extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (_) => SelectSemesterScreen(
                                 courseTitle: title,
+                                courseId: courseId,
                                 degreeLevel: 'Undergraduate',
                               ),
                             ),
@@ -96,7 +105,41 @@ class SelectCourseScreen extends StatelessWidget {
                               Expanded(
                                 child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                               ),
-                              Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                              if (hasAccess)
+                                PopupMenuButton<String>(
+                                  icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.primary),
+                                  onSelected: (value) async {
+                                    if (value == 'edit') {
+                                      await _showEditCourseDialog(context, firestoreService, courseId, title);
+                                    } else if (value == 'delete') {
+                                      await _showDeleteCourseDialog(context, firestoreService, courseId, title);
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete, size: 20, color: Colors.red),
+                                          SizedBox(width: 8),
+                                          Text('Delete', style: TextStyle(color: Colors.red)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
                             ],
                           ),
                         ),
@@ -109,6 +152,13 @@ class SelectCourseScreen extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: hasAccess
+          ? FloatingActionButton(
+              onPressed: () => _showAddCourseDialog(context, firestoreService),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
@@ -126,6 +176,140 @@ class SelectCourseScreen extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
+        );
+      },
     );
+  }
+
+  Future<void> _showAddCourseDialog(BuildContext context, FirestoreService firestoreService) async {
+    final nameController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Course'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Course Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter course name')),
+                );
+                return;
+              }
+
+              await firestoreService.addCourse(
+                degreeLevelId: _degreeLevelId,
+                displayName: nameController.text,
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Course added successfully')),
+                );
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showEditCourseDialog(
+    BuildContext context,
+    FirestoreService firestoreService,
+    String courseId,
+    String currentName,
+  ) async {
+    final nameController = TextEditingController(text: currentName);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Course'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Course Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter course name')),
+                );
+                return;
+              }
+
+              await firestoreService.updateCourse(
+                degreeLevelId: _degreeLevelId,
+                courseId: courseId,
+                displayName: nameController.text,
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Course updated successfully')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDeleteCourseDialog(
+    BuildContext context,
+    FirestoreService firestoreService,
+    String courseId,
+    String courseName,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Course'),
+        content: Text('Are you sure you want to delete "$courseName"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await firestoreService.deleteCourse(
+        degreeLevelId: _degreeLevelId,
+        courseId: courseId,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Course deleted successfully')),
+        );
+      }
+    }
   }
 }

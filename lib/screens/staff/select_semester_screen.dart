@@ -17,7 +17,13 @@ class SelectSemesterScreen extends StatelessWidget {
       if (degreeLevel == 'Postgraduate') return 'PG';
       return 'DIP';
     }();
-    return Scaffold(
+    
+    return StreamBuilder<bool>(
+      stream: firestoreService.getSyllabusTimetableAccess(),
+      builder: (context, accessSnapshot) {
+        final hasAccess = accessSnapshot.data ?? false;
+
+        return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Select Semester', style: TextStyle(color: Colors.white)),
@@ -74,6 +80,8 @@ class SelectSemesterScreen extends StatelessWidget {
                           separatorBuilder: (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final title = semesters[index]['displayName'] ?? '';
+                            final semesterId = semesters[index]['id'] ?? '';
+                            
                             return InkWell(
                               onTap: () {
                                 Navigator.push(
@@ -103,7 +111,41 @@ class SelectSemesterScreen extends StatelessWidget {
                                     Icon(Icons.school_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
                                     const SizedBox(width: 16),
                                     Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
-                                    Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                                    if (hasAccess)
+                                      PopupMenuButton<String>(
+                                        icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.primary),
+                                        onSelected: (value) async {
+                                          if (value == 'edit') {
+                                            await _showEditSemesterDialog(context, firestoreService, degreeLevelId, courseId!, semesterId, title);
+                                          } else if (value == 'delete') {
+                                            await _showDeleteSemesterDialog(context, firestoreService, degreeLevelId, courseId!, semesterId, title);
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit, size: 20),
+                                                SizedBox(width: 8),
+                                                Text('Edit'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete, size: 20, color: Colors.red),
+                                                SizedBox(width: 8),
+                                                Text('Delete', style: TextStyle(color: Colors.red)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
                                   ],
                                 ),
                               ),
@@ -148,6 +190,8 @@ class SelectSemesterScreen extends StatelessWidget {
                               separatorBuilder: (_, __) => const SizedBox(height: 12),
                               itemBuilder: (context, index) {
                                 final title = semesters[index]['displayName'] ?? '';
+                                final semesterId = semesters[index]['id'] ?? '';
+                                
                                 return InkWell(
                                   onTap: () {
                                     Navigator.push(
@@ -177,7 +221,41 @@ class SelectSemesterScreen extends StatelessWidget {
                                         Icon(Icons.school_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
                                         const SizedBox(width: 16),
                                         Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
-                                        Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
+                                        if (hasAccess)
+                                          PopupMenuButton<String>(
+                                            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.primary),
+                                            onSelected: (value) async {
+                                              if (value == 'edit') {
+                                                await _showEditSemesterDialog(context, firestoreService, degreeLevelId, resolvedCourseId, semesterId, title);
+                                              } else if (value == 'delete') {
+                                                await _showDeleteSemesterDialog(context, firestoreService, degreeLevelId, resolvedCourseId, semesterId, title);
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 20),
+                                                    SizedBox(width: 8),
+                                                    Text('Edit'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.delete, size: 20, color: Colors.red),
+                                                    SizedBox(width: 8),
+                                                    Text('Delete', style: TextStyle(color: Colors.red)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        else
+                                          Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.primary),
                                       ],
                                     ),
                                   ),
@@ -192,6 +270,13 @@ class SelectSemesterScreen extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: hasAccess && courseId != null && courseId!.isNotEmpty
+          ? FloatingActionButton(
+              onPressed: () => _showAddSemesterDialog(context, firestoreService, degreeLevelId, courseId!),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
@@ -209,6 +294,152 @@ class SelectSemesterScreen extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
+        );
+      },
     );
+  }
+
+  Future<void> _showAddSemesterDialog(
+    BuildContext context,
+    FirestoreService firestoreService,
+    String degreeLevelId,
+    String courseId,
+  ) async {
+    final nameController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Semester'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Semester Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter semester name')),
+                );
+                return;
+              }
+
+              await firestoreService.addSemester(
+                degreeLevelId: degreeLevelId,
+                courseId: courseId,
+                displayName: nameController.text,
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Semester added successfully')),
+                );
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showEditSemesterDialog(
+    BuildContext context,
+    FirestoreService firestoreService,
+    String degreeLevelId,
+    String courseId,
+    String semesterId,
+    String currentName,
+  ) async {
+    final nameController = TextEditingController(text: currentName);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Semester'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Semester Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter semester name')),
+                );
+                return;
+              }
+
+              await firestoreService.updateSemester(
+                degreeLevelId: degreeLevelId,
+                courseId: courseId,
+                semesterId: semesterId,
+                displayName: nameController.text,
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Semester updated successfully')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDeleteSemesterDialog(
+    BuildContext context,
+    FirestoreService firestoreService,
+    String degreeLevelId,
+    String courseId,
+    String semesterId,
+    String semesterName,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Semester'),
+        content: Text('Are you sure you want to delete "$semesterName"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await firestoreService.deleteSemester(
+        degreeLevelId: degreeLevelId,
+        courseId: courseId,
+        semesterId: semesterId,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Semester deleted successfully')),
+        );
+      }
+    }
   }
 }
