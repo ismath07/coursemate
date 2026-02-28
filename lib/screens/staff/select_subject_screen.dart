@@ -28,7 +28,7 @@ class StaffSelectSubjectScreen extends StatelessWidget {
     final String semesterId = semester.toString();
 
     return StreamBuilder<bool>(
-      stream: firestoreService.getSyllabusTimetableAccess(),
+      stream: firestoreService.editAccessStream(),
       builder: (context, accessSnapshot) {
         final hasAccess = accessSnapshot.data ?? false;
 

@@ -164,41 +164,11 @@ class AdminPanel extends StatelessWidget {
   }
 
   Widget _syllabusAccessCard(BuildContext context) {
-    return StreamBuilder<bool>(
-      stream: FirestoreService().getSyllabusTimetableAccess(),
+    return FutureBuilder<Map<String, bool>>(
+      future: FirestoreService().getEditAccessStatus(),
       builder: (context, snapshot) {
-        final isEnabled = snapshot.data ?? false;
-
-        return InkWell(
-          onTap: () async {
-            final confirm = await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: Text(isEnabled ? 'Disable Access?' : 'Enable Access?'),
-                content: Text(
-                  isEnabled
-                      ? 'Staff will not be able to edit syllabus and timetable.'
-                      : 'Staff will be able to edit syllabus and timetable.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Confirm'),
-                  ),
-                ],
-              ),
-            );
-
-            if (confirm == true) {
-              await FirestoreService().toggleSyllabusTimetableAccess(!isEnabled);
-            }
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
@@ -211,43 +181,143 @@ class AdminPanel extends StatelessWidget {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.edit_note_outlined,
-                  size: 28,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Syllabus & Timetable Access',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final status = snapshot.data ?? {
+          'editAccessApproved': false,
+          'editAccessRequested': false,
+        };
+
+        final isApproved = status['editAccessApproved'] ?? false;
+        final isRequested = status['editAccessRequested'] ?? false;
+
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.edit_note_outlined,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Syllabus & Timetable Access',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Enable editing of syllabus and timetable',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey,
+                        SizedBox(height: 4),
+                        Text(
+                          'Request permission to edit syllabus and timetable',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // State 1: Not requested yet
+              if (!isRequested && !isApproved)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await FirestoreService().requestEditAccess();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Edit access request sent to admin'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.send),
+                    label: const Text('Request Edit Access'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              // State 2: Requested but not approved
+              if (isRequested && !isApproved)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.hourglass_empty, color: Colors.orange, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Waiting for Admin Approval',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  isEnabled ? Icons.check_circle : Icons.lock,
-                  size: 24,
-                  color: isEnabled ? Colors.green : Colors.red,
+              // State 3: Approved
+              if (isApproved)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.check_circle, color: Colors.green, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '✔ Edit Access Granted',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+            ],
           ),
         );
       },

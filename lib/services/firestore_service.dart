@@ -280,6 +280,85 @@ class FirestoreService {
     return false;
   }
 
+  /* ============================================================
+     EDIT ACCESS CONTROL
+     ============================================================ */
+
+  /// Check if current user has edit access approved
+  Future<bool> isEditAccessApproved() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    final doc = await _firestore
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .get();
+
+    if (!doc.exists) return false;
+
+    final data = doc.data();
+    return data?['editAccessApproved'] == true;
+  }
+
+  /// Request edit access
+  Future<void> requestEditAccess() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await _firestore
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .set({
+      'editAccessApproved': false,
+      'editAccessRequested': true,
+    }, SetOptions(merge: true));
+  }
+
+  /// Stream edit access status
+  Stream<bool> editAccessStream() {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value(false);
+
+    return _firestore
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return false;
+      final data = doc.data();
+      return data?['editAccessApproved'] == true;
+    });
+  }
+
+  /// Get edit access request status
+  Future<Map<String, bool>> getEditAccessStatus() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return {
+        'editAccessApproved': false,
+        'editAccessRequested': false,
+      };
+    }
+
+    final doc = await _firestore
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .get();
+
+    if (!doc.exists) {
+      return {
+        'editAccessApproved': false,
+        'editAccessRequested': false,
+      };
+    }
+
+    final data = doc.data();
+    return {
+      'editAccessApproved': data?['editAccessApproved'] == true,
+      'editAccessRequested': data?['editAccessRequested'] == true,
+    };
+  }
+
   Future<void> updateUserProfile({required String name}) async {
     final user = _auth.currentUser;
     if (user == null) return;
