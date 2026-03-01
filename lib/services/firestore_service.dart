@@ -192,6 +192,7 @@ class FirestoreService {
     final user = _auth.currentUser;
     if (user == null) return null;
 
+    // Step 1: Check staff_accounts collection first
     final staffDoc = await _firestore
         .collection('staff_accounts')
         .doc(user.uid)
@@ -201,6 +202,7 @@ class FirestoreService {
       return 'staff';
     }
 
+    // Step 2: Check users collection
     final studentDoc = await _firestore
         .collection('users')
         .doc(user.uid)
@@ -210,7 +212,18 @@ class FirestoreService {
       return 'student';
     }
 
-    return null;
+    // Step 3: If neither exists, create student document
+    await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .set({
+      'email': user.email ?? '',
+      'name': user.displayName ?? '',
+      'role': 'student',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    return 'student';
   }
 
   Future<bool> isAdminApproved() async {

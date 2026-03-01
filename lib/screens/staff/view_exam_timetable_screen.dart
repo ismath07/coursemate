@@ -28,7 +28,7 @@ class ViewExamTimetableScreen extends StatelessWidget {
     final firestoreService = FirestoreService();
 
     return StreamBuilder<bool>(
-      stream: firestoreService.getSyllabusTimetableAccess(),
+      stream: firestoreService.editAccessStream(),
       builder: (context, accessSnapshot) {
         final hasAccess = accessSnapshot.data ?? false;
 
