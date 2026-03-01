@@ -577,7 +577,7 @@ Stream<List<Map<String, dynamic>>> getExamTimetable(
       .doc(departmentId)
       .collection('years')
       .doc(yearId)
-      .collection('exams')
+      .collection('subjects')
       .orderBy('date')
       .snapshots()
       .map((snapshot) {
@@ -586,7 +586,7 @@ Stream<List<Map<String, dynamic>>> getExamTimetable(
 
       return {
         'id': doc.id,
-        'title': data['title'] ?? '',
+        'subjectName': data['subjectName'] ?? '',
         'subjectCode': data['subjectCode'] ?? '',
         'date': data['date'] ?? '',
         'day': data['day'] ?? '',
@@ -828,13 +828,14 @@ Stream<List<Map<String, dynamic>>> getExamTimetable(
         .doc(departmentId)
         .collection('years')
         .doc(yearId)
-        .collection('exams')
+        .collection('subjects')
         .add({
-      'title': title,
+      'subjectName': title,
       'subjectCode': subjectCode,
       'date': date,
       'day': day,
       'session': session,
+      'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -856,14 +857,15 @@ Stream<List<Map<String, dynamic>>> getExamTimetable(
         .doc(departmentId)
         .collection('years')
         .doc(yearId)
-        .collection('exams')
+        .collection('subjects')
         .doc(examId)
         .update({
-      'title': title,
+      'subjectName': title,
       'subjectCode': subjectCode,
       'date': date,
       'day': day,
       'session': session,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -880,7 +882,7 @@ Stream<List<Map<String, dynamic>>> getExamTimetable(
         .doc(departmentId)
         .collection('years')
         .doc(yearId)
-        .collection('exams')
+        .collection('subjects')
         .doc(examId)
         .delete();
   }
