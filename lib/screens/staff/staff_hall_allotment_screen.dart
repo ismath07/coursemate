@@ -53,7 +53,7 @@ class StaffHallAllotmentScreen extends StatelessWidget {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('staff_hall_allotments')
-                  .orderBy('createdAt', descending: true)
+                  .orderBy('sno')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -96,6 +96,7 @@ class StaffHallAllotmentScreen extends StatelessWidget {
                           final doc = docs[index];
                           final data = doc.data() as Map<String, dynamic>;
 
+                          final sno = data['sno'] ?? 0;
                           final staffName = data['staffName']?.toString() ?? '';
                           final hallNo = data['hallNo']?.toString() ?? '';
                           final totalStudents = data['totalStudents'] ?? 0;
@@ -111,7 +112,7 @@ class StaffHallAllotmentScreen extends StatelessWidget {
 
                           return DataRow(
                             cells: [
-                              DataCell(Text('${index + 1}')),
+                              DataCell(Text(sno.toString())),
                               DataCell(Text(staffName)),
                               DataCell(Text(hallNo)),
                               DataCell(
@@ -261,6 +262,18 @@ class StaffHallAllotmentScreen extends StatelessWidget {
               }
 
               try {
+                // Auto-increment sno logic
+                var snapshot = await FirebaseFirestore.instance
+                    .collection('staff_hall_allotments')
+                    .orderBy('sno', descending: true)
+                    .limit(1)
+                    .get();
+
+                int nextSno = 1;
+                if (snapshot.docs.isNotEmpty) {
+                  nextSno = (snapshot.docs.first.data()['sno'] ?? 0) + 1;
+                }
+
                 final studentsList = studentsController.text
                     .split(',')
                     .map((e) => e.trim())
@@ -272,6 +285,7 @@ class StaffHallAllotmentScreen extends StatelessWidget {
                 await FirebaseFirestore.instance
                     .collection('staff_hall_allotments')
                     .add({
+                  'sno': nextSno,
                   'staffName': staffNameController.text.trim(),
                   'hallNo': hallNoController.text.trim(),
                   'noOfStudents': studentsList,
