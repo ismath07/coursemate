@@ -397,6 +397,17 @@ class FirestoreService {
     });
   }
 
+  /// Stream staff account document for real-time updates
+  Stream<DocumentSnapshot> getStaffAccountStream() {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    
+    return _firestore
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .snapshots();
+  }
+
   /// Get edit access request status
   Future<Map<String, bool>> getEditAccessStatus() async {
     final user = _auth.currentUser;

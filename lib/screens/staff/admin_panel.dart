@@ -15,14 +15,19 @@ class AdminPanel extends StatelessWidget {
     return Scaffold(
       body: user == null
           ? const Center(child: CircularProgressIndicator())
-          : FutureBuilder<bool>(
-              future: FirestoreService().isAdminApproved(),
+          : StreamBuilder<DocumentSnapshot>(
+              stream: FirestoreService().getStaffAccountStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final bool isApproved = snapshot.data == true;
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return _buildAccessRequestView(context, user.uid);
+                }
+
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
+                final bool isApproved = data?['adminApproved'] ?? false;
 
                 if (!isApproved) {
                   return _buildAccessRequestView(context, user.uid);
@@ -44,7 +49,7 @@ class AdminPanel extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 await FirebaseFirestore.instance
-                    .collection('users')
+                    .collection('staff_accounts')
                     .doc(uid)
                     .set(
                       {'adminApproved': false},
