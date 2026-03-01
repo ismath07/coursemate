@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'staff_home_screen.dart';
 import 'select_semester_screen.dart';
 import '../../services/firestore_service.dart';
 
@@ -106,23 +105,6 @@ class SelectCourseDiplomaScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        onTap: (index) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => StaffHomeScreen(initialIndex: index)),
-          );
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: 'Syllabus'),
-          BottomNavigationBarItem(icon: Icon(Icons.schedule_outlined), label: 'Timetable'),
-          BottomNavigationBarItem(icon: Icon(Icons.admin_panel_settings_outlined), label: 'Admin'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
       ),
     );
   }

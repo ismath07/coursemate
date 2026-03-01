@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'student_home_screen.dart';
 import 'view_syllabus_screen.dart';
 import '../../services/firestore_service.dart';
 
@@ -229,22 +228,6 @@ class SelectSubjectScreen extends StatelessWidget {
                   );
                 },
               ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        onTap: (index) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => StudentHomeScreen(initialIndex: index)),
-          );
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: 'Syllabus'),
-          BottomNavigationBarItem(icon: Icon(Icons.schedule_outlined), label: 'Timetable'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
       ),
     );
   }
