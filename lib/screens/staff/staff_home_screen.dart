@@ -22,6 +22,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    // Ensure staff account has all required access fields
+    FirestoreService().createStaffAccountIfNotExists();
   }
 
   List<Widget> get _pages => [

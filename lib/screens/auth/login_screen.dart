@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'signup_screen.dart';
 import 'forget_password_screen.dart';
 import 'role_checker.dart';
+import '../../services/firestore_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,6 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
         email: email,
         password: password,
       );
+
+      // 🔧 Create staff account with default access fields if not exists
+      await FirestoreService().createStaffAccountIfNotExists();
 
       // 🔁 After successful login → go to RoleChecker
       if (!mounted) return;

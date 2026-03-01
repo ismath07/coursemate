@@ -284,6 +284,74 @@ class FirestoreService {
      EDIT ACCESS CONTROL
      ============================================================ */
 
+  /// Create staff account if not exists with default access fields
+  Future<void> createStaffAccountIfNotExists() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('staff_accounts')
+        .doc(user.uid);
+    final doc = await docRef.get();
+
+    if (!doc.exists) {
+      // Create new staff document with default access fields
+      await docRef.set({
+        'email': user.email ?? '',
+        'name': user.displayName ?? '',
+        'role': 'staff',
+        'createdAt': FieldValue.serverTimestamp(),
+        // DEFAULT ACCESS FIELDS
+        'adminApproved': false,
+        'editAccessRequested': false,
+        'editAccessApproved': false,
+      });
+    } else {
+      // Ensure existing document also has required fields
+      final data = doc.data();
+      if (data != null) {
+        Map<String, dynamic> updates = {};
+        
+        if (!data.containsKey('adminApproved')) {
+          updates['adminApproved'] = false;
+        }
+        if (!data.containsKey('editAccessRequested')) {
+          updates['editAccessRequested'] = false;
+        }
+        if (!data.containsKey('editAccessApproved')) {
+          updates['editAccessApproved'] = false;
+        }
+        
+        if (updates.isNotEmpty) {
+          await docRef.update(updates);
+        }
+      }
+    }
+  }
+
+  /// Ensure staff account has edit access fields (legacy support)
+  Future<void> ensureStaffAccessFields() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final docRef = _firestore.collection('staff_accounts').doc(user.uid);
+    final doc = await docRef.get();
+
+    if (!doc.exists) return;
+
+    final data = doc.data();
+    if (data == null) return;
+
+    // Check if fields are missing
+    if (!data.containsKey('editAccessRequested') ||
+        !data.containsKey('editAccessApproved')) {
+      await docRef.set({
+        'editAccessRequested': false,
+        'editAccessApproved': false,
+      }, SetOptions(merge: true));
+    }
+  }
+
   /// Check if current user has edit access approved
   Future<bool> isEditAccessApproved() async {
     final user = _auth.currentUser;
@@ -302,16 +370,15 @@ class FirestoreService {
 
   /// Request edit access
   Future<void> requestEditAccess() async {
-    final user = _auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    await _firestore
+    await FirebaseFirestore.instance
         .collection('staff_accounts')
         .doc(user.uid)
-        .set({
-      'editAccessApproved': false,
+        .update({
       'editAccessRequested': true,
-    }, SetOptions(merge: true));
+    });
   }
 
   /// Stream edit access status

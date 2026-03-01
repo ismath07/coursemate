@@ -164,34 +164,26 @@ class AdminPanel extends StatelessWidget {
   }
 
   Widget _syllabusAccessCard(BuildContext context) {
-    return FutureBuilder<Map<String, bool>>(
-      future: FirestoreService().getEditAccessStatus(),
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('staff_accounts')
+          .doc(user.uid)
+          .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Center(child: CircularProgressIndicator()),
-          );
+        // Default values
+        bool editAccessRequested = false;
+        bool editAccessApproved = false;
+
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>?;
+          editAccessRequested = data?['editAccessRequested'] == true;
+          editAccessApproved = data?['editAccessApproved'] == true;
         }
-
-        final status = snapshot.data ?? {
-          'editAccessApproved': false,
-          'editAccessRequested': false,
-        };
-
-        final isApproved = status['editAccessApproved'] ?? false;
-        final isRequested = status['editAccessRequested'] ?? false;
 
         return Container(
           padding: const EdgeInsets.all(18),
@@ -242,31 +234,37 @@ class AdminPanel extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              // State 1: Not requested yet
-              if (!isRequested && !isApproved)
-                SizedBox(
+              
+              // CASE 1: editAccessApproved == true
+              if (editAccessApproved)
+                Container(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      await FirestoreService().requestEditAccess();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Edit access request sent to admin'),
-                          backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.check_circle, color: Colors.green, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Access Approved',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.send),
-                    label: const Text('Request Edit Access'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              // State 2: Requested but not approved
-              if (isRequested && !isApproved)
+              
+              // CASE 2: editAccessRequested == true AND editAccessApproved == false
+              if (editAccessRequested && !editAccessApproved)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -285,36 +283,34 @@ class AdminPanel extends StatelessWidget {
                           style: TextStyle(
                             color: Colors.orange,
                             fontWeight: FontWeight.w500,
+                            fontSize: 14,
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              // State 3: Approved
-              if (isApproved)
-                Container(
+              
+              // CASE 3: editAccessRequested == false
+              if (!editAccessRequested && !editAccessApproved)
+                SizedBox(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.check_circle, color: Colors.green, size: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '✔ Edit Access Granted',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await FirestoreService().requestEditAccess();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Edit access request sent to admin'),
+                          backgroundColor: Colors.blue,
                         ),
-                      ),
-                    ],
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Request Access'),
                   ),
                 ),
             ],

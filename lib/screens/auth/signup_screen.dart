@@ -49,15 +49,25 @@ class _SignupScreenState extends State<SignupScreen> {
       final collectionName =
           normalizedRole == 'staff' ? 'staff_accounts' : 'users';
 
-      await FirebaseFirestore.instance
-          .collection(collectionName)
-          .doc(uid)
-          .set({
+      // Create account document with all required fields
+      final accountData = {
         'name': name,
         'email': email,
         'role': normalizedRole,
         'createdAt': Timestamp.now(),
-      });
+      };
+
+      // Add edit access fields for staff accounts
+      if (normalizedRole == 'staff') {
+        accountData['adminApproved'] = false;
+        accountData['editAccessRequested'] = false;
+        accountData['editAccessApproved'] = false;
+      }
+
+      await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(uid)
+          .set(accountData);
 
       if (!mounted) return;
 
