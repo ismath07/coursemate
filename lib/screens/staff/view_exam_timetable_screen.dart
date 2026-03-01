@@ -67,6 +67,12 @@ class ViewExamTimetableScreen extends StatelessWidget {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('exam_timetables')
+                  .doc(degreeId)
+                  .collection('departments')
+                  .doc(departmentId)
+                  .collection('years')
+                  .doc(yearId)
+                  .collection('exams')
                   .orderBy('createdAt')
                   .snapshots(),
               builder: (context, snapshot) {
@@ -199,6 +205,12 @@ class ViewExamTimetableScreen extends StatelessWidget {
               try {
                 await FirebaseFirestore.instance
                     .collection('exam_timetables')
+                    .doc(degreeId)
+                    .collection('departments')
+                    .doc(departmentId)
+                    .collection('years')
+                    .doc(yearId)
+                    .collection('exams')
                     .add({
                   'date': dateController.text.trim(),
                   'day': dayController.text.trim(),
@@ -289,6 +301,12 @@ class ViewExamTimetableScreen extends StatelessWidget {
               try {
                 await FirebaseFirestore.instance
                     .collection('exam_timetables')
+                    .doc(degreeId)
+                    .collection('departments')
+                    .doc(departmentId)
+                    .collection('years')
+                    .doc(yearId)
+                    .collection('exams')
                     .doc(doc.id)
                     .update({
                   'date': dateController.text.trim(),
@@ -342,6 +360,12 @@ class ViewExamTimetableScreen extends StatelessWidget {
       try {
         await FirebaseFirestore.instance
             .collection('exam_timetables')
+            .doc(degreeId)
+            .collection('departments')
+            .doc(departmentId)
+            .collection('years')
+            .doc(yearId)
+            .collection('exams')
             .doc(docId)
             .delete();
 
