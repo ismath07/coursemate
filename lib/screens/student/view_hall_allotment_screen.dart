@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'student_home_screen.dart';
-import '../../services/firestore_service.dart';
-import 'hall_allotment_table_screen.dart';
 
 class StudentViewHallAllotmentScreen extends StatelessWidget {
   const StudentViewHallAllotmentScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService = FirestoreService();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -34,83 +32,76 @@ class StudentViewHallAllotmentScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: FutureBuilder<List<Map<String, String>>>(
-          future: firestoreService.getHallDegrees().first,
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('staff_hall_allotments')
+              .orderBy('sno')
+              .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
+            
             if (snapshot.hasError) {
-              return const Center(child: Text('Failed to load degrees.'));
+              return const Center(child: Text('Failed to load hall allotments.'));
             }
-            final degrees = (snapshot.data ?? [])
-                .where((d) => d['id'] == 'UG' || d['id'] == 'PG')
-                .toList();
-            if (degrees.isEmpty) {
+            
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const Center(child: Text('No data available'));
             }
-           return ListView.builder(
-  itemCount: degrees.length,
-  itemBuilder: (context, index) {
-    final deg = degrees[index];
-    final id = deg['id'] ?? '';
-    final name = deg['displayName'] ?? id;
-
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HallAllotmentTableScreen(
-              degreeId: id,
-              degreeName: name,
-            ),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.apartment_outlined,
-              size: 28,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+            
+            final docs = snapshot.data!.docs;
+            
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SingleChildScrollView(
+                child: DataTable(
+                  columnSpacing: 20,
+                  columns: const [
+                    DataColumn(label: Text('S.No')),
+                    DataColumn(label: Text('Staff Name')),
+                    DataColumn(label: Text('Hall No')),
+                    DataColumn(label: Text('Students')),
+                    DataColumn(label: Text('Total Students')),
+                  ],
+                  rows: docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    
+                    final sno = data['sno'] ?? 0;
+                    final staffName = data['staffName']?.toString() ?? '';
+                    final hallNo = data['hallNo']?.toString() ?? '';
+                    final totalStudents = data['totalStudents'] ?? 0;
+                    
+                    // Safe conversion for noOfStudents
+                    final noOfStudentsData = data['noOfStudents'];
+                    List<String> studentsList = [];
+                    if (noOfStudentsData is List) {
+                      studentsList = noOfStudentsData.map((e) => e.toString()).toList();
+                    }
+                    
+                    final studentsText = studentsList.isEmpty ? '-' : studentsList.join(', ');
+                    
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(sno.toString())),
+                        DataCell(Text(staffName)),
+                        DataCell(Text(hallNo)),
+                        DataCell(
+                          SizedBox(
+                            width: 200,
+                            child: Text(
+                              studentsText,
+                              softWrap: true,
+                            ),
+                          ),
+                        ),
+                        DataCell(Text(totalStudents.toString())),
+                      ],
+                    );
+                  }).toList(),
                 ),
               ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ],
-        ),
-      ),
-    );
-  },
-);
+            );
           },
         ),
       ),
@@ -133,4 +124,3 @@ class StudentViewHallAllotmentScreen extends StatelessWidget {
     );
   }
 }
-

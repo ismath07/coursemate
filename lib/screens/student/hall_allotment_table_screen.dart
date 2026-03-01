@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../services/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HallAllotmentTableScreen extends StatelessWidget {
   final String degreeId;
   final String degreeName;
   const HallAllotmentTableScreen({super.key, required this.degreeId, required this.degreeName});
 
-  static const String _examId = 'nov_2025';
-
   @override
   Widget build(BuildContext context) {
-    final firestoreService = FirestoreService();
-    debugPrint('🟢 HallAllotmentTableScreen');
-  debugPrint('➡️ degreeId = $degreeId');
-  debugPrint('➡️ degreeName = $degreeName');
-  debugPrint('➡️ examId = $_examId');
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -53,51 +46,70 @@ class HallAllotmentTableScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: firestoreService.getHallAllotmentRows(
-  degreeId: degreeId,
-  examId: _examId,
-),
-
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('staff_hall_allotments')
+                    .orderBy('sno')
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
+                  
                   if (snapshot.hasError) {
                     return const Center(child: Text('Failed to load hall allotments.'));
                   }
-                  final rows = snapshot.data ?? [];
-                  if (rows.isEmpty) {
+                  
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return const Center(child: Text('No data available'));
                   }
+                  
+                  final docs = snapshot.data!.docs;
+                  
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
                       child: DataTable(
+                        columnSpacing: 20,
                         columns: const [
-                          DataColumn(label: Text('Sno')),
-                          DataColumn(label: Text('Year/Dept')),
-                          DataColumn(label: Text('Register Numbers')),
-                          DataColumn(label: Text('HallNo')),
-                          DataColumn(label: Text('No.of Students')),
+                          DataColumn(label: Text('S.No')),
+                          DataColumn(label: Text('Staff Name')),
+                          DataColumn(label: Text('Hall No')),
+                          DataColumn(label: Text('Students')),
+                          DataColumn(label: Text('Total Students')),
                         ],
-                        rows: rows.map((row) {
-                          final sno = row['sno']?.toString() ?? '';
-                          final yearDept = (row['yearDept'] is List)
-                              ? (row['yearDept'] as List).map((e) => e.toString()).join('\n')
-                              : '';
-                          final regNos = (row['regNumbers'] is List)
-                              ? (row['regNumbers'] as List).map((e) => e.toString()).join('\n')
-                              : '';
-                              final hallNo = row['hallNo']?.toString() ?? '';
-                              final noOfStudents = row['noOfStudents']?.toString() ?? '';
+                        rows: docs.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          
+                          final sno = data['sno'] ?? 0;
+                          final staffName = data['staffName']?.toString() ?? '';
+                          final hallNo = data['hallNo']?.toString() ?? '';
+                          final totalStudents = data['totalStudents'] ?? 0;
+                          
+                          // Safe conversion for noOfStudents
+                          final noOfStudentsData = data['noOfStudents'];
+                          List<String> studentsList = [];
+                          if (noOfStudentsData is List) {
+                            studentsList = noOfStudentsData.map((e) => e.toString()).toList();
+                          }
+                          
+                          final studentsText = studentsList.isEmpty ? '-' : studentsList.join(', ');
+                          
                           return DataRow(
                             cells: [
-                              DataCell(Text(sno)),
-                              DataCell(Text(yearDept)),
-                              DataCell(Text(regNos)),
+                              DataCell(Text(sno.toString())),
+                              DataCell(Text(staffName)),
                               DataCell(Text(hallNo)),
-                              DataCell(Text(noOfStudents)),
+                              DataCell(
+                                SizedBox(
+                                  width: 200,
+                                  child: Text(
+                                    studentsText,
+                                    softWrap: true,
+                                  ),
+                                ),
+                              ),
+                              DataCell(Text(totalStudents.toString())),
                             ],
                           );
                         }).toList(),
