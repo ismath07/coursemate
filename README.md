@@ -1,4 +1,4 @@
-📚 CourseMate – Smart Syllabus Access and Examination Scheduling Application
+#📚 CourseMate – Smart Syllabus Access and Examination Scheduling Application
 
 📖 About the Project
 
