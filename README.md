@@ -1,6 +1,6 @@
 # 📚 CourseMate – Smart Syllabus Access and Examination Scheduling Application
 
-📖 About the Project
+## 📖 About the Project
 
 CourseMate is a smart, role-based mobile application developed using Flutter and Firebase to simplify academic syllabus access and examination management in educational institutions.
 
