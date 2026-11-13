@@ -1,0 +1,328 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../theme_notifier.dart';
+import '../auth/login_screen.dart';
+import '../common/edit_profile_screen.dart';
+
+class StaffProfileScreen extends StatefulWidget {
+  const StaffProfileScreen({super.key});
+
+  @override
+  State<StaffProfileScreen> createState() => _StaffProfileScreenState();
+}
+
+class _StaffProfileScreenState extends State<StaffProfileScreen> {
+  int _refreshKey = 0; // Key to force rebuild
+
+  Future<void> _handleEditProfile(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // Fetch current user data
+    final userDoc = await FirebaseFirestore.instance
+        .collection('staff_accounts')
+        .doc(user.uid)
+        .get();
+
+    if (!userDoc.exists) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User data not found')),
+        );
+      }
+      return;
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final currentName = userData['name'] ?? 'Staff Member';
+
+    if (context.mounted) {
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EditProfileScreen(
+            currentName: currentName,
+            collection: 'staff_accounts', // Staff collection
+          ),
+        ),
+      );
+
+      // If profile was updated, refresh the UI
+      if (result == true && mounted) {
+        setState(() {
+          _refreshKey++; // Force rebuild of FutureBuilder
+        });
+      }
+    }
+  }
+
+  Future<void> _handleDeleteAccount(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This will delete your local account data from this device and log you out.\n\nAre you sure you want to continue?',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await user.delete();
+        }
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting account: $e')));
+        }
+      }
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Logout')),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      await FirebaseAuth.instance.signOut();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  Future<void> _showThemeDialog(BuildContext context) async {
+    final choice = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Select Theme'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Light'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Dark'),
+          ),
+        ],
+      ),
+    );
+
+    if (choice != null) {
+      await ThemeManager.setTheme(choice ? ThemeMode.dark : ThemeMode.light);
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    return Scaffold(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                  // Centered profile header (avatar, name, email)
+                  Center(
+                    child: FutureBuilder<DocumentSnapshot>(
+                      key: ValueKey(_refreshKey), // Force rebuild when key changes
+                      future: user != null
+                          ? FirebaseFirestore.instance
+                              .collection('staff_accounts')
+                              .doc(user.uid)
+                              .get()
+                          : null,
+                      builder: (context, snapshot) {
+                        String name = 'Staff Member';
+                        String email = 'staff@example.com';
+                        bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+
+                        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                          final data = snapshot.data!.data() as Map<String, dynamic>;
+                          name = data['name'] ?? 'Staff Member';
+                          email = data['email'] ?? 'staff@example.com';
+                        } else if (user != null) {
+                            email = user.email ?? 'staff@example.com';
+                        }
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: 40,
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              child: isLoading 
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Icon(Icons.person, color: Colors.white),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              isLoading ? 'Loading...' : name,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontSize: 18, 
+                                fontWeight: FontWeight.w600
+                              )
+                            ),
+                            const SizedBox(height: 12),
+                            Material(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  if (isLoading) return;
+                                  await Clipboard.setData(ClipboardData(text: email));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email copied to clipboard')));
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.email, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(isLoading ? '...' : email),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Theme option styled like other profile options
+                  _profileOption(
+                    icon: Icons.brightness_6_outlined,
+                    title: 'Theme',
+                    onTap: () => _showThemeDialog(context),
+                  ),
+
+                  const SizedBox(height: 1),
+
+                  // Profile options
+                  _profileOption(
+                    icon: Icons.edit_outlined,
+                    title: 'Edit Profile',
+                    onTap: () => _handleEditProfile(context),
+                  ),
+
+                  _profileOption(
+                    icon: Icons.logout,
+                    title: 'Logout',
+                    color: Colors.red,
+                    onTap: () => _handleLogout(context),
+                  ),
+                  
+                  _profileOption(
+                    icon: Icons.delete_outline,
+                    title: 'Delete Account',
+                    color: Colors.red,
+                    onTap: () => _handleDeleteAccount(context),
+                  ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _profileOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color ?? Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: color ?? Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+}
