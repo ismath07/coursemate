@@ -12,11 +12,15 @@ CourseMate aims to reduce the difficulties of manually searching for academic in
 
 CourseMate provides separate access for Students and Staff, with features based on their respective roles.
 
-### ⚙️ How CourseMate Works
-
    **User Login:** Students and staff log in through their respective accounts.
+   
    **Role-Based Dashboard:** Users access their role-specific home screens.
+   
    **Syllabus Access:** Browse UG, PG, and Diploma courses, semesters, subjects, and syllabus.
+   
    **Examination Timetable:** Select UG or PG courses to view exam schedules.
+   
    **Hall Allotment:** Students view hall details, while authorized staff manage allotments.
+   
    **Profile Management:** View and manage personal profile details.
+   
