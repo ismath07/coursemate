@@ -19,8 +19,17 @@ CourseMate provides separate access for Students and Staff, with features based 
    **Syllabus Access:** Browse UG, PG, and Diploma courses, semesters, subjects, and syllabus.
    
    **Examination Timetable:** Select UG or PG courses to view exam schedules.
-   
+
    **Hall Allotment:** Students view hall details, while authorized staff manage allotments.
    
    **Profile Management:** View and manage personal profile details.
+
+## 📚 Academic Syllabus Management
+
+CourseMate provides UG, PG, and Diploma syllabus access through course-wise and semester-wise navigation, allowing users to view subjects and their detailed syllabus units.
+
+## 🗓️ Examination Management
+
+CourseMate enables students and staff to access UG and PG examination timetables and view examination hall allotment details, with authorized staff able to manage allotment information.
    
+  
