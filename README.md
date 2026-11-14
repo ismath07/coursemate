@@ -8,7 +8,7 @@ The application provides a centralized platform for students and staff to access
 
 CourseMate aims to reduce the difficulties of manually searching for academic information by providing an organized, user-friendly, and easily accessible mobile application.
 
-🎯 How CourseMate Works
+### 🎯 How CourseMate Works
 
 CourseMate provides separate access for Students and Staff, with features based on their respective roles.
 
