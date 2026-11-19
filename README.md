@@ -50,15 +50,22 @@ CourseMate enables students and staff to access UG and PG examination timetables
        <td> <img width="720" height="1454" alt="image" src="https://github.com/user-attachments/assets/83ed56bf-1b07-45ae-818d-f6fe885714dc" /></td>
      </tr>
      <tr>
-       <td> </t>
-       <td> </td>
-       <td> </td>
+       <td> <img width="720" height="1458" alt="image" src="https://github.com/user-attachments/assets/42cc3af8-7a7f-4116-85ba-c2c516f1b55d" /></t>
+       <td> <img width="720" height="1438" alt="image" src="https://github.com/user-attachments/assets/53cd4dd3-d7fb-4828-a5ac-2a5b2047c61f" /></td>
+       <td> <img width="720" height="1457" alt="image" src="https://github.com/user-attachments/assets/e8e3354a-6afd-466b-ba48-e767f62197ac" /></td>
      </tr>
       <tr>
-       <td> </t>
-       <td> </td>
-       <td> </td>
+       <td> <img width="720" height="1461" alt="image" src="https://github.com/user-attachments/assets/87244db6-293e-41bc-a67a-d056e326f94e" /></t>
+       <td> <img width="720" height="1457" alt="image" src="https://github.com/user-attachments/assets/d5359975-4805-49a8-99c2-69a8a020792a" /></td>
      </tr>
    </table>
+   ### light and dark mode feature
+   <table>
+     <tr>
+       <td> <img width="720" height="1457" alt="image" src="https://github.com/user-attachments/assets/a51133fe-d8d8-474e-929c-82e2e7db1c83" /></td>
+       <td> <img width="720" height="1444" alt="image" src="https://github.com/user-attachments/assets/dd7d9f3a-bd1b-4a5f-a973-7dbd9a6a5d64" /></td>
+     </tr>
+   </table>
+
 
 
