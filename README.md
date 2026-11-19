@@ -94,4 +94,21 @@ CourseMate enables students and staff to access UG and PG examination timetables
 
 CourseMate is available in APK format for Android devices. Download the APK file using the link below to install and explore the application.
 
-**Download APK:** [Click Here to Download](YOUR_APK_LINK)
+**Download APK:** [Click Here to Download](https://github.com/ismath07/coursemate/releases/tag/v1.0.0)
+
+## 🔮 Future Enhancements
+
+- Push notifications for examination updates and announcements.
+- Student academic progress tracking.
+- Enhanced admin controls and management features.
+- Improved user experience and application performance.
+- Additional academic management functionalities.
+
+## 👩‍💻 Project Information
+
+- **Project Name:** CourseMate
+- **Project Title:** Development of CourseMate: A Smart Syllabus Access and Examination Scheduling Application.
+- **Project Type:** Academic Project
+- **Platform:** Android
+- **Technologies:** Flutter, Dart, and Firebase
+- **Version:** 1.0.0
