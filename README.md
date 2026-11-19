@@ -35,10 +35,15 @@ CourseMate enables students and staff to access UG and PG examination timetables
 ## 📸 Application Screenshots
    <table>
      <tr>
-       <td><img width="180" img src="logo" /></td>
-       <td><img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/96b67f38-4c9d-4b8c-add0-902ed4f60fac" /></td>
-       <td><img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/7efaf163-7416-4fa7-aee1-eee7a9454115" /></td>
-      </tr>
+       <td> <img width="720" height="1457" alt="logo" src="https://github.com/user-attachments/assets/1f19a9fa-08f9-4afe-80e5-b5b277ae39a9" /></td>
+       <td> <img width="716" height="1450" alt="signup" src="https://github.com/user-attachments/assets/4e4f6e2a-a5ca-4a1d-ad4e-7a6c2971f2d1" /></td>
+       <td> <img width="720" height="1456" alt="login" src="https://github.com/user-attachments/assets/a03efea9-a257-4e02-8b98-61c22b417c6b" /></td>
+     </tr>
+     <tr>
+       <td> <img width="720" height="1448" alt="welcome" src="https://github.com/user-attachments/assets/131f5c2b-a14f-490d-8784-e6ba9d488941" /></td>
+       <td> <img width="720" height="1461" alt="staff" src="https://github.com/user-attachments/assets/4e72ff62-f657-4d1b-b9d1-4fbffef2daeb" /></td>
+       <td> <img width="720" height="1451" alt="student" src="https://github.com/user-attachments/assets/1f1401a9-a235-4df0-b75c-263d800a02be" /></td>
+     </tr>
    </table>
 
 
