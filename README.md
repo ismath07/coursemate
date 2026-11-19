@@ -63,8 +63,8 @@ CourseMate enables students and staff to access UG and PG examination timetables
 ### light and drak mode feature
    <table>
      <tr>
-       <td> <img width=350" height="900" alt="image" src="https://github.com/user-attachments/assets/a51133fe-d8d8-474e-929c-82e2e7db1c83" /></td>
-       <td> <img width="350" height="785" alt="image" src="https://github.com/user-attachments/assets/dd7d9f3a-bd1b-4a5f-a973-7dbd9a6a5d64" /></td>
+       <td> <img width=350"  alt="image" src="https://github.com/user-attachments/assets/a51133fe-d8d8-474e-929c-82e2e7db1c83" /></td>
+       <td> <img width="350"  alt="image" src="https://github.com/user-attachments/assets/dd7d9f3a-bd1b-4a5f-a973-7dbd9a6a5d64" /></td>
      </tr>
    </table>
 
