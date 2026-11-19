@@ -33,8 +33,12 @@ CourseMate provides UG, PG, and Diploma syllabus access through course-wise and 
 CourseMate enables students and staff to access UG and PG examination timetables and view examination hall allotment details, with authorized staff able to manage allotment information.
 
 ## 📸 Application Screenshots
-   
-  <img width="720" height="1457" alt="image" src="https://github.com/user-attachments/assets/eff83153-48f0-41fe-b8cf-d5cd7f6314ae" />
-<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/96b67f38-4c9d-4b8c-add0-902ed4f60fac" />
-<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/7efaf163-7416-4fa7-aee1-eee7a9454115" />
+   <table>
+     <tr>
+       <td><img width="180" img src="logo" /></td>
+       <td><img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/96b67f38-4c9d-4b8c-add0-902ed4f60fac" /></td>
+       <td><img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/7efaf163-7416-4fa7-aee1-eee7a9454115" /></td>
+      </tr>
+   </table>
+
 
