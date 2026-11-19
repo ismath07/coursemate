@@ -81,4 +81,17 @@ CourseMate enables students and staff to access UG and PG examination timetables
      </tr>
    </table>
 
+## 🛠️ Technologies Used
 
+- **Flutter** – Cross-platform mobile application development.
+- **Dart** – Programming language.
+- **Firebase Authentication** – User login and authentication.
+- **Cloud Firestore** – Storing and retrieving application data.
+- **Visual Studio Code** – Development environment.
+- **Git & GitHub** – Version control and source code management.
+
+## 📱 Application Download
+
+CourseMate is available in APK format for Android devices. Download the APK file using the link below to install and explore the application.
+
+**Download APK:** [Click Here to Download](YOUR_APK_LINK)
