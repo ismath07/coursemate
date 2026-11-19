@@ -67,6 +67,18 @@ CourseMate enables students and staff to access UG and PG examination timetables
        <td> <img width="350"  alt="image" src="https://github.com/user-attachments/assets/dd7d9f3a-bd1b-4a5f-a973-7dbd9a6a5d64" /></td>
      </tr>
    </table>
-
+   
+### admin access screenshots 
+ <table>
+     <tr>
+       <td> <img width="720" height="1461" alt="image" src="https://github.com/user-attachments/assets/c85959ee-9c30-4a9c-9fba-6c761197387c" /></td>
+       <td> <img width="720" height="1454" alt="image" src="https://github.com/user-attachments/assets/23742b49-04e7-4b4d-946e-78990590cd3d" /></td>
+       <td> <img width="720" height="1449" alt="image" src="https://github.com/user-attachments/assets/612023f4-7ab5-4383-88d0-9a9c407d61ba" /></td>
+     </tr>
+   <tr>
+       <td> <img width="720" height="1457" alt="image" src="https://github.com/user-attachments/assets/ee15e5ba-52ed-4991-aa70-3ed03ced2daa" /></td>
+       <td> <img width="720" height="1454" alt="image" src="https://github.com/user-attachments/assets/7147377d-21df-4a7f-ad05-17f2d292e231" /></td>
+     </tr>
+   </table>
 
 
